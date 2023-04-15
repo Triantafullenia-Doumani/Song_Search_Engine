@@ -1,3 +1,4 @@
+package org.indexer;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +26,7 @@ public class SearchEngine {
         this.englishAnalyzer = new EnglishAnalyzer(null);
       
         // Create the analyzer with per-field configuration
-        Map<String, Analyzer> perFieldAnalyzers = new HashMap<>();
+        Map<String, Analyzer> perFieldAnalyzers = new HashMap<String, Analyzer>();
         perFieldAnalyzers.put("Artist", keywordAnalyzer);
         perFieldAnalyzers.put("Title",  analyzer);
         perFieldAnalyzers.put("Album", analyzer);
