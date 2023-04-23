@@ -71,7 +71,7 @@ public class Indexer {
 	        // Add document to the index
 	        indexWriter.addDocument(doc);
       }
-	 System.out.println("Index created: Number of documents in the index: " + this.indexWriter.numRamDocs());
+	 System.out.println("Index created successfully: Number of documents in the index: " + this.indexWriter.numRamDocs());
 
    
    }
