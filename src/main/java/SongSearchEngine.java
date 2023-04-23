@@ -13,9 +13,13 @@ public class SongSearchEngine {
         Indexer indexer = new Indexer();
         
         // Search the index
-        Searcher searcher = new Searcher("Lady Gaga", "artist");
-        List<Document> results = searcher.searchFiles();
+        Searcher searcher = new Searcher();
+        List<Document> results = searcher.search("Ladyd Gaga", "Artist");
         
+        if(results.isEmpty()) {
+        	System.out.println("\nNo results found");
+        	System.exit(0);
+        }
         // Print the search results
         for (Document doc : results) {
             System.out.println(doc);

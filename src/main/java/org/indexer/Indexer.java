@@ -12,7 +12,6 @@ import java.util.Map;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -24,52 +23,56 @@ import org.apache.lucene.store.FSDirectory;
 
 public class Indexer {
 
-
+	IndexWriter indexWriter;
+	CSVParser parser;
    public Indexer() throws IOException {
 	    // Initialize index directory
-	    Directory index = null;
-	    index = FSDirectory.open(Paths.get(LuceneConstants.INDEX_FILE_PATH));
+	    Directory index = FSDirectory.open(Paths.get(LuceneConstants.INDEX_FILE_PATH));
 
-	    // Create analyzer and index writer configuration
-	    Analyzer analyzer  = new StandardAnalyzer();
-	    IndexWriterConfig config = new IndexWriterConfig(analyzer);
+	    // Create index writer configuration
+	    IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
 
 	    // Create index writer
-	    IndexWriter writer = new IndexWriter(index, config);
+	    this.indexWriter = new IndexWriter(index, config);
 
 	    // Parse CSV file
-	    CSVFormat format = CSVFormat.DEFAULT;
-	    CSVParser parser = CSVParser.parse(new File(LuceneConstants.CSV_PATH_AND_FILE_NAME), StandardCharsets.UTF_8, format);
+	    CSVFormat format = CSVFormat.DEFAULT.withFirstRecordAsHeader();
 	    
-	 // Check if header is present in CSV file
+	    this.parser = CSVParser.parse(new File(LuceneConstants.CSV_PATH_AND_FILE_NAME), StandardCharsets.UTF_8, format);
+	    
+	    // Check if header is present in CSV file
 	    Map<String, Integer> headerMap = parser.getHeaderMap();
 	    if (headerMap == null) {
-	       writer.close();
-	       throw new IOException("CSV file does not have header");
-	    }
-	    
+	    	indexWriter.close();
+		    throw new IOException("CSV file does not have header");
+		}
 	    // Iterate over records and add to index
 	    for (CSVRecord record : parser) {
 	        // Create new document for each record
 	        Document doc = new Document();
 	        
 	        // Add each field to the document
-	        for (String header : parser.getHeaderMap().keySet()) {
+	        for (String header : headerMap.keySet()) {
 	            // Get the text value for the header
 	            String text = record.get(header);
 	            
-	            // Preprocess text
-	            text = preprocessText(text);
+	            // @TOFIX synexisei na bazei ta anepithimita string mesa
+	            if((text.equals("lyrics for this song have yet to be released please check back once the song has been released")) || (text.equals("unreleased songs")) || (text.equals("unreleased"))) {
+	            	text = "";	
+	            }else {
+	            	// Preprocess text
+		            text = preprocessText(text);
+	            }
 	            
+	            header = preprocessText(header);
 	            // Add field to document
 	            doc.add(new TextField(header, text, Field.Store.YES));
 	        }
 	        // Add document to the index
-	        writer.addDocument(doc);
+	        indexWriter.addDocument(doc);
       }
-      // Close index writer and parser
-      writer.close();
-      parser.close();
+	 System.out.println("Index created: Number of documents in the index: " + this.indexWriter.numRamDocs());
+
    
    }
    
@@ -82,5 +85,9 @@ public class Indexer {
        text = text.trim();
        return text;
    }
-
+   
+   public void close() throws IOException {
+	   this.indexWriter.close();
+	   this.parser.close();
+   }
 }
