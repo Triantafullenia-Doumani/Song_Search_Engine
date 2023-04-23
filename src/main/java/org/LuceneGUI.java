@@ -14,13 +14,15 @@ import org.indexer.Indexer;
 
 public class LuceneGUI implements ActionListener {
 
+    // Declare instance variables for the GUI components
     private JFrame frame;
     private JPanel panel;
     private JTextField queryTextField;
     private JComboBox<String> fieldComboBox;
     private JTextArea resultsTextArea;
     private Searcher searcher;
-
+    
+    // Constructor for the GUI
     public LuceneGUI(Searcher searcher) {
         this.searcher = searcher;
         createGUI();
@@ -77,6 +79,7 @@ public class LuceneGUI implements ActionListener {
         frame.setVisible(true);
     }
 
+    // Method to handle the search button click
     @Override
     public void actionPerformed(ActionEvent event) {
         if (event.getActionCommand().equals("Search")) {
