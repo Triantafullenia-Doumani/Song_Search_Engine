@@ -1,15 +1,28 @@
 package org;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.List;
 
-import javax.swing.*;
-import org.apache.lucene.queryparser.classic.ParseException;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+
+import org.Indexer.Keyword.KeywordIndexer;
+import org.Indexer.Standard.StandardIndexer;
 import org.Searcher.Searcher;
 import org.apache.lucene.document.Document;
-import org.indexer.Indexer;
+import org.apache.lucene.queryparser.classic.ParseException;
 
 public class LuceneGUI implements ActionListener {
 
@@ -23,8 +36,8 @@ public class LuceneGUI implements ActionListener {
 	private JButton prevButton;
 	private JButton nextButton;
 	private int currentPage = 1;
-	private int pageSize = 10;
     private Searcher searcher;
+    
     // Constructor for the GUI
     public LuceneGUI(Searcher searcher) {
         this.searcher = searcher;
@@ -89,7 +102,7 @@ public class LuceneGUI implements ActionListener {
             String field = (String) fieldComboBox.getSelectedItem();
             List<Document> results;
             try {
-                results = searcher.search(queryString, field, pageSize);
+                results = searcher.search(queryString, field);
                 displayResults(results);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -130,7 +143,8 @@ public class LuceneGUI implements ActionListener {
 
 
     public static void main(String[] args) throws IOException {
-        new Indexer();
+        new StandardIndexer();
+        new KeywordIndexer();
         Searcher searcher = new Searcher();
         new LuceneGUI( searcher);
     }
