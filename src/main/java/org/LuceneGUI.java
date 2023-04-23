@@ -18,8 +18,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import org.Indexer.Keyword.KeywordIndexer;
-import org.Indexer.Standard.StandardIndexer;
+import org.Indexer.KeywordIndexer;
+import org.Indexer.StandardIndexer;
 import org.Searcher.Searcher;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;

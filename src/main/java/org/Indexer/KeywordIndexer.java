@@ -1,4 +1,4 @@
-package org.Indexer.Keyword;
+package org.Indexer;
 
 import org.Constants.*;
 
