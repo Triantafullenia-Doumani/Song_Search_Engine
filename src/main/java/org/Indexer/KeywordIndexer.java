@@ -15,6 +15,8 @@ import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
@@ -26,15 +28,27 @@ public class KeywordIndexer {
 	CSVParser parser;
 
 	public KeywordIndexer() throws IOException {
+		
+		System.out.println("Keyword Analyzer: ");
 	    // Initialize index directory
 		Directory index = FSDirectory.open(Paths.get(LuceneConstants.KEYWORD_INDEX_FILE_PATH));
-		
+	    if (!DirectoryReader.indexExists(index)) {
+	    	System.out.println("	Index does not exist");
+	    } else {
+            IndexReader reader = DirectoryReader.open(index);
+            System.out.println("	Number of documents in existing Index: " + reader.numDocs());
+            reader.close();
+        }
 		// Create index writer configuration
 		IndexWriterConfig config = new IndexWriterConfig(new KeywordAnalyzer());
 		
 		// Create index writer
 		this.indexWriter = new IndexWriter(index, config);
-		
+	    // Delete existing index, if it exists
+	    if (DirectoryReader.indexExists(index)) {
+	    	System.out.println("	Deleting existing index...");
+	    	this.indexWriter.deleteAll();
+	    }
 		// Parse CSV file
 		CSVFormat format = CSVFormat.DEFAULT.withFirstRecordAsHeader();
 		
@@ -63,21 +77,22 @@ public class KeywordIndexer {
 		    // Add document to the index
 		    this.indexWriter.addDocument(doc);
 		  }
-		 System.out.println("Index created successfully: Number of documents in the index: " + this.indexWriter.numRamDocs());
+		 System.out.println("	New Index created successfully: Number of documents in the new index: " + this.indexWriter.numRamDocs()+"\n");
+		 close();
 	}
    
    private static String preprocessText(String text) {
-       // Remove punctuation
-       text = text.replaceAll("[^a-zA-Z0-9 ]", "");
-       // Lowercase the text
-       text = text.toLowerCase();
-       // Trim leading and trailing whitespace
-       text = text.trim();
-       return text;
+	    // Remove all punctuation marks except hyphens, periods, and digits
+	    text = text.replaceAll("[^a-zA-Z0-9\\s.-]", "");
+	    // Lowercase the text
+	    text = text.toLowerCase();
+	    // Trim leading and trailing whitespace
+	    text = text.trim();
+	    return text;
    }
    
    public void close() throws IOException {
 	   this.indexWriter.close();
 	   this.parser.close();
-   }
+	}
 }

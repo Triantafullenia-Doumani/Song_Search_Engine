@@ -147,5 +147,6 @@ public class LuceneGUI implements ActionListener {
         new KeywordIndexer();
         Searcher searcher = new Searcher();
         new LuceneGUI( searcher);
+        searcher.close();
     }
 }
