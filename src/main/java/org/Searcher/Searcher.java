@@ -34,7 +34,6 @@ public class Searcher {
 
 	Directory standardIndexDirectory;
 	Directory keywordIndexDirectory;
-	IndexSearcher indexSearcher;
 	TopDocs topDocs;
 	
 	int currentPage = 1;
@@ -77,49 +76,76 @@ public class Searcher {
    * @return A list of documents matching the query.
    */
   public List<Document> search(String currentQuery, String currentField) throws IOException, ParseException {
-      List<Document> results = new ArrayList<>();
-      int numHits = LuceneConstants.PAGE_SIZE * currentPage;
-      this.currentField = currentField;
-      this.currentQuery = currentQuery;
-      // Preprocess the query text
-      currentQuery = preprocessText(currentQuery);
-      currentField = "Entire document";
+	  List<Document> results = new ArrayList<>();
+	    int numHits = LuceneConstants.PAGE_SIZE * currentPage;
+	    currentQuery = preprocessText(currentQuery);
+	    currentField = "Entire document";
 
-      BooleanQuery.Builder booleanQueryBuilder = new BooleanQuery.Builder();
-      // Get the query for the standard index
-      Query standardQuery = getQueryForSingleField(currentField, currentQuery);
-      booleanQueryBuilder.add(new BooleanClause(standardQuery, BooleanClause.Occur.SHOULD));
+	    BooleanQuery.Builder booleanQueryBuilder = new BooleanQuery.Builder();
+	    // Get the query for the standard index
+	    Query standardQuery = getQueryForSingleField(currentField, currentQuery);
+	    booleanQueryBuilder.add(new BooleanClause(standardQuery, BooleanClause.Occur.SHOULD));
 
-      // Get the query for the keyword index
-      Query keywordQuery = getQueryForSingleField(currentField, currentQuery);
-      booleanQueryBuilder.add(new BooleanClause(keywordQuery, BooleanClause.Occur.SHOULD));
+	    // Get the query for the keyword index
+	    Query keywordQuery = getQueryForSingleField(currentField, currentQuery);
+	    booleanQueryBuilder.add(new BooleanClause(keywordQuery, BooleanClause.Occur.SHOULD));
 
-      this.query = booleanQueryBuilder.build();
+	    Query query = booleanQueryBuilder.build();
 
-      // Get the top hits from the search and iterate through them
-      TopDocs topDocs = indexSearcher.search(query, numHits);
-      ScoreDoc[] hits = topDocs.scoreDocs;
-      // Calculate the start and end indices for the current page
-      int start = LuceneConstants.PAGE_SIZE * (currentPage - 1);
-      int end = Math.min(numHits, start + LuceneConstants.PAGE_SIZE);
-      StoredFields storedFields = indexSearcher.storedFields();
-      if (hits == null) {
-          System.out.println("No hits");
-      }
-      if (hits.length > 0) {
-          for (int i = start; i < end; i++) {
-              // Get the document object for the current hit
-              Document hitDoc = storedFields.document(hits[i].doc);
-              // Add the document object to the list of results
-              results.add(hitDoc);
-          }
-      }
-      if (results.isEmpty()) {
-          System.out.println("No results found");
-      }
-      //printIndexer();
-      return results;
+	    // Get the top hits from the search and iterate through them
+	    TopDocs standardTopDocs = standardIndexSearcher.search(query, numHits);
+	    ScoreDoc[] standardHits = standardTopDocs.scoreDocs;
+
+	    TopDocs keywordTopDocs = keywordIndexSearcher.search(query, numHits);
+	    ScoreDoc[] keywordHits = keywordTopDocs.scoreDocs;
+
+	    // Merge the two sets of hits and sort by relevance score
+	    ScoreDoc[] mergedHits = mergeHits(standardHits, keywordHits);
+
+	    // Calculate the start and end indices for the current page
+	    int start = LuceneConstants.PAGE_SIZE * (currentPage - 1);
+	    int end = Math.min(numHits, start + LuceneConstants.PAGE_SIZE);
+
+	    if (mergedHits == null) {
+	        System.out.println("No hits");
+	    }
+	    if (mergedHits.length > 0) {
+	        for (int i = start; i < end; i++) {
+	            // Get the document object for the current hit
+	            Document hitDoc = null;
+	            if (i < mergedHits.length) {
+	                hitDoc = mergedHits[i].doc < standardHits.length ?
+	                        standardIndexSearcher.doc(mergedHits[i].doc) :
+	                        keywordIndexSearcher.doc(mergedHits[i].doc - standardHits.length);
+	            }
+	            // Add the document object to the list of results
+	            results.add(hitDoc);
+	        }
+	    }
+	    if (results.isEmpty()) {
+	        System.out.println("No results found");
+	    }
+	    printIndexer();
+	    return results;
   }
+  private ScoreDoc[] mergeHits(ScoreDoc[] hits1, ScoreDoc[] hits2) {
+	    ScoreDoc[] mergedHits = new ScoreDoc[hits1.length + hits2.length];
+	    int i = 0, j = 0, k = 0;
+	    while (i < hits1.length && j < hits2.length) {
+	        if (hits1[i].score >= hits2[j].score) {
+	            mergedHits[k++] = hits1[i++];
+	        } else {
+	            mergedHits[k++] = hits2[j++];
+	        }
+	    }
+	    while (i < hits1.length) {
+	        mergedHits[k++] = hits1[i++];
+	    }
+	    while (j < hits2.length) {
+	        mergedHits[k++] = hits2[j++];
+	    }
+	    return mergedHits;
+	}
 
 
 
@@ -166,18 +192,20 @@ public class Searcher {
 	}
 
 	// Print method, just for debugging to verify that Indexer has been created correctly
-	public void printIndexer(IndexReader indexReader) throws IOException {
-		// Print number of documents in the index
-		System.out.println("Number of documents in the index: " + indexReader.numDocs());
-		// Print the contents of each document
-		for (int docId = 0; docId < indexReader.maxDoc(); docId++) {
-		    Document document = indexReader.document(docId);
-		    System.out.println("Document ID: " + docId);
-		    for (IndexableField field : document.getFields()) {
-		        System.out.println("  " + field.name() + " = " + field.stringValue());
-		    }
-		}
-   }
+	public void printIndexer() throws IOException {
+	    IndexReader reader = DirectoryReader.open(this.standardIndexDirectory);
+	    int numDocs = reader.numDocs();
+	    for (int i = 0; i < numDocs; i++) {
+	        Document doc = reader.document(i);
+	        System.out.println("Document " + i + ":");
+	        List<IndexableField> fields = doc.getFields();
+	        for (IndexableField field : fields) {
+	            System.out.println("  " + field.name() + ": " + doc.get(field.name()));
+	        }
+	    }
+	    reader.close();
+	}
+
 	public void close() throws IOException {
 		this.keywordIndexDirectory.close();
 		this.standardIndexDirectory.close();
