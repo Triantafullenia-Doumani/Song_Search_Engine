@@ -78,9 +78,7 @@ public class StandardIndexer {
 		        	// Preprocess text
 		            text = preprocessText(text);
 		        }
-		        
-		        header = preprocessText(header);
-		        // Add field to document
+		        		        // Add field to document
 		        doc.add(new TextField(header, text, Field.Store.YES));
 		    }
 		    // Add document to the index

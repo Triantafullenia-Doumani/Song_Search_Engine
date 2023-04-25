@@ -69,8 +69,12 @@ public class KeywordIndexer {
 		    for (String header : headerMap.keySet()) {
 		        // Get the text value for the header
 		        String text = record.get(header);
-		        	        
-		        header = preprocessText(header);
+	            if((text.equals("lyrics for this song have yet to be released please check back once the song has been released")) || (text.equals("unreleased songs")) || (text.equals("unreleased"))) {
+	            	text = "";	
+	            }else {
+	            	// Preprocess text
+		            text = preprocessText(text);
+	            }	        
 		        // Add field to document
 		        doc.add(new StringField(header, text, Field.Store.YES));
 		    }

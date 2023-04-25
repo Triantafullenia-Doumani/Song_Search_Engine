@@ -1,6 +1,7 @@
 package org;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -17,12 +18,16 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
 import org.Indexer.KeywordIndexer;
 import org.Indexer.StandardIndexer;
 import org.Searcher.Searcher;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
+
+import com.opencsv.exceptions.CsvException;
 
 public class LuceneGUI implements ActionListener {
 
@@ -57,7 +62,7 @@ public class LuceneGUI implements ActionListener {
 		// Create the query panel with the query text field, field combo box and search button
 		JPanel queryPanel = new JPanel(new GridLayout(1, 0, 10, 0));
 		queryTextField = new JTextField();
-		fieldComboBox = new JComboBox<>(new String[]{"Artist", "Title", "Album", "Date", "Lyrics", "Year"});
+		fieldComboBox = new JComboBox<>(new String[]{"General Search","Artist", "Title", "Album", "Date", "Lyrics", "Year"});
 		searchButton = new JButton("Search");
 		searchButton.addActionListener(this);
 		queryPanel.add(queryTextField);
@@ -70,7 +75,7 @@ public class LuceneGUI implements ActionListener {
 		resultsTextArea.setEditable(false);
 		JScrollPane scrollPane = new JScrollPane(resultsTextArea);
 		pageNumberLabel = new JLabel("Page " + currentPage);
-		prevButton = new JButton("Prev");
+		prevButton = new JButton("Previous");
 		prevButton.addActionListener(this);
 		prevButton.setEnabled(false);
 		nextButton = new JButton("Next");
@@ -98,8 +103,8 @@ public class LuceneGUI implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent event) {
         if (event.getActionCommand().equals("Search")) {
-            String queryString = queryTextField.getText().trim();
-            String field = (String) fieldComboBox.getSelectedItem();
+        	String queryString = queryTextField.getText().trim();
+        	String field = (String) fieldComboBox.getSelectedItem();
             List<Document> results;
             try {
                 results = searcher.search(queryString, field);
@@ -109,9 +114,10 @@ public class LuceneGUI implements ActionListener {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
-        } else if (event.getActionCommand().equals("Next Page")) {
+        } else if (event.getActionCommand().equals("Next")) {
             try {
                 if (searcher.hasNextPage()) {
+                	currentPage++;
                     List<Document> results = searcher.getNextPage();
                     displayResults(results);
                 }
@@ -120,9 +126,10 @@ public class LuceneGUI implements ActionListener {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
-        } else if (event.getActionCommand().equals("Previous Page")) {
+        } else if (event.getActionCommand().equals("Previous")) {
             try {
                 if (searcher.hasPreviousPage()) {
+                	currentPage--;
                     List<Document> results = searcher.getPreviousPage();
                     displayResults(results);
                 }
@@ -133,16 +140,53 @@ public class LuceneGUI implements ActionListener {
             }
         }
     }
-
     private void displayResults(List<Document> results) {
+    	String queryString = queryTextField.getText().trim();
+    	String field = (String) fieldComboBox.getSelectedItem();
+        pageNumberLabel.setText("Page " + currentPage);
         resultsTextArea.setText("");
+        Highlighter highlighter = resultsTextArea.getHighlighter();
+        highlighter.removeAllHighlights();
         for (Document result : results) {
-            resultsTextArea.append(result.get("Title") + " by " + result.get("Artist") + " (" + result.get("Year") + ")\n");
+            String title = result.get("Title");
+            String artist = result.get("Artist");
+            String year = result.get("Year");
+            String resultString = title + " by " + artist + " (" + year + ")\n";
+            resultsTextArea.append(resultString);
+            if (field.equals("General Search")) {
+                int startIndex = resultString.indexOf(queryString);
+                if (startIndex != -1) {
+                    try {
+                        highlighter.addHighlight(
+                                resultsTextArea.getText().indexOf(resultString) + startIndex,
+                                resultsTextArea.getText().indexOf(resultString) + startIndex + queryString.length(),
+                                new DefaultHighlighter.DefaultHighlightPainter(Color.PINK)
+                        );
+                    } catch (BadLocationException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        // Enable or disable the "Previous" button based on the value of searcher.hasNextPage()
+        if (searcher.hasNextPage()) {
+            prevButton.setEnabled(true);
+        } else {
+            prevButton.setEnabled(false);
+        }
+        
+        // Enable or disable the "Next" button based on the value of searcher.hasNextPage()
+        if (searcher.hasNextPage()) {
+            nextButton.setEnabled(true);
+        } else {
+            nextButton.setEnabled(false);
         }
     }
 
 
-    public static void main(String[] args) throws IOException {
+
+
+    public static void main(String[] args) throws IOException, CsvException {
         new StandardIndexer();
         new KeywordIndexer();
         Searcher searcher = new Searcher();
