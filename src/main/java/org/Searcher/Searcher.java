@@ -145,7 +145,7 @@ public class Searcher {
    
    private static String preprocessText(String text) {
        // Remove punctuation
-       text = text.replaceAll("[^a-zA-Z0-9 ]", "");
+	   text = text.replaceAll("[^a-zA-Z0-9\\s.-]", "");
        // Lower case the text
        text = text.toLowerCase();
        // Trim leading and trailing whitespace

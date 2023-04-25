@@ -31,10 +31,10 @@ public class Indexer {
 
 	    // Create index writer configuration
 	    IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
-
+	    
 	    // Create index writer
 	    this.indexWriter = new IndexWriter(index, config);
-
+	    
 	    // Parse CSV file
 	    CSVFormat format = CSVFormat.DEFAULT.withFirstRecordAsHeader();
 	    
@@ -78,7 +78,7 @@ public class Indexer {
    
    private static String preprocessText(String text) {
        // Remove punctuation
-       text = text.replaceAll("[^a-zA-Z0-9 ]", "");
+	   text = text.replaceAll("[^a-zA-Z0-9\\s.-]", "");
        // Lowercase the text
        text = text.toLowerCase();
        // Trim leading and trailing whitespace
