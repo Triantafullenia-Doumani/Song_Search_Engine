@@ -35,6 +35,13 @@
 		    <artifactId>lucene-sandbox</artifactId>
 		    <version>9.5.0</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-grouping -->
+		<dependency>
+    		<groupId>org.apache.lucene</groupId>
+    		<artifactId>lucene-grouping</artifactId>
+    		<version>9.5.0</version>
+		</dependency>
+
 		<dependency>
 		    <groupId>com.opencsv</groupId>
 		    <artifactId>opencsv</artifactId>
