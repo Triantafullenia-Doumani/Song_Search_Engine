@@ -298,7 +298,6 @@ private String[] getFieldNames(IndexReader reader) throws IOException {
 	   // Lower case the text
 	   text = text.toLowerCase();
 	   // Trim leading and trailing whitespace
-       text = text.trim();
-       return text;
+
 	}
 }
