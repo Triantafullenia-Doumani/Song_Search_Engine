@@ -107,15 +107,16 @@ public class Searcher {
 
 private List<Document> searchStandard(boolean isGrouped) throws IOException, ParseException {
 	 List<Document> results = new ArrayList<Document>();
-	  
-	  // Preprocess the query text
+	 
+	 // Preprocess the query text
     currentQuery = preprocessText(currentQuery);
     // Create a query parser with the specified field and analyzer
 	QueryParser queryParser = new QueryParser(currentField, new StandardAnalyzer());
 	Query query = queryParser.parse(currentQuery);
 	
-	
-    // Get the top hits from the search and iterate through them
+    System.out.println(currentQuery);
+
+	// Get the top hits from the search and iterate through them
     int numHits = LuceneConstants.PAGE_SIZE * currentPage;
     topDocs = standardIndexSearcher.search(query, numHits);
     ScoreDoc[] hits = topDocs.scoreDocs;
@@ -150,7 +151,7 @@ private List<Document> searchStandard(boolean isGrouped) throws IOException, Par
 }
 private List<Document> searchKeyword(boolean isGrouped) throws IOException, ParseException {
     List<Document> results = new ArrayList<Document>();
-
+    
     // Preprocess the query text
     currentQuery = preprocessText(currentQuery);
 
@@ -158,6 +159,7 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
     QueryParser queryParser = new MultiFieldQueryParser(getFieldNames(keywordIndexReader), new KeywordAnalyzer());
     Query query = queryParser.parse(currentQuery);
     
+    System.out.println(currentQuery);
     // Get the top hits from the search and iterate through them
     int numHits = LuceneConstants.PAGE_SIZE * currentPage;
     topDocs = keywordIndexSearcher.search(query, numHits);
@@ -298,6 +300,7 @@ private String[] getFieldNames(IndexReader reader) throws IOException {
 	   // Lower case the text
 	   text = text.toLowerCase();
 	   // Trim leading and trailing whitespace
-
+       text = text.trim();
+       return text;
 	}
 }
