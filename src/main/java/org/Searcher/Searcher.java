@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -22,9 +23,14 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.grouping.GroupingSearch;
+import org.apache.lucene.search.grouping.TopGroups;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+
 
 import org.apache.lucene.index.StoredFields;
 
@@ -42,10 +48,11 @@ public class Searcher {
 	private TopDocs topDocs;
 	
 	private int currentPage = 1;
-	   
+	
 	private String currentQuery;
 	private String currentField;
-	   
+	private boolean isGrouped;
+	
   public Searcher() throws IOException{
 
 	// Open keyword index directory
@@ -73,7 +80,7 @@ public class Searcher {
    * @param numResults The maximum number of results to return.
    * @return A list of documents matching the query.
    */
-  public List<Document> search(String currentQuery, String currentField) throws IOException, ParseException {
+  public List<Document> search(String currentQuery, String currentField,boolean isGrouped) throws IOException, ParseException {
 	  System.out.println("current query: "+currentQuery);
 	  System.out.println("current Field: "+currentField+"\n");
 	  
@@ -81,13 +88,14 @@ public class Searcher {
 	  
 	  this.currentQuery = currentQuery;
 	  this.currentField = currentField;
+	  this.isGrouped = isGrouped;
 	  
 	  if(currentField.equals("General Search")) {
 		  System.out.println("Searching in keyword Indexer...");
-		  results = searchKeyword();
+		  results = searchKeyword(isGrouped);
 	  }else {
 		  this.currentField = currentField;
-		  results = searchStandard();
+		  results = searchStandard(isGrouped);
 		  System.out.println("Searching in Standard Indexer...");
 	  }
 	  if(results.isEmpty()) {
@@ -97,7 +105,7 @@ public class Searcher {
   }
   
 
-private List<Document> searchStandard() throws IOException, ParseException {
+private List<Document> searchStandard(boolean isGrouped) throws IOException, ParseException {
 	 List<Document> results = new ArrayList<Document>();
 	  
 	  // Preprocess the query text
@@ -105,7 +113,8 @@ private List<Document> searchStandard() throws IOException, ParseException {
     // Create a query parser with the specified field and analyzer
 	QueryParser queryParser = new QueryParser(currentField, new StandardAnalyzer());
 	Query query = queryParser.parse(currentQuery);
-
+	
+	
     // Get the top hits from the search and iterate through them
     int numHits = LuceneConstants.PAGE_SIZE * currentPage;
     topDocs = standardIndexSearcher.search(query, numHits);
@@ -124,12 +133,22 @@ private List<Document> searchStandard() throws IOException, ParseException {
             results.add(hitDoc);
         }
     }
+    
+    if(isGrouped) {
+		TopGroups<BytesRef> topGroups = groupingStandardResults("Year",query);
+		for (int i=0; i<topGroups.groups.length; i++) {
+			  ScoreDoc sdoc = topGroups.groups[i].scoreDocs[0]; // first result of each group
+			  Document d = standardIndexSearcher.doc(sdoc.doc);
+			  results.add(d);
+			 }
+	}
+	
     //printStandardIndexer();
     // Return the list of results
     return results;
 	
 }
-private List<Document> searchKeyword() throws IOException, ParseException {
+private List<Document> searchKeyword(boolean isGrouped) throws IOException, ParseException {
     List<Document> results = new ArrayList<Document>();
 
     // Preprocess the query text
@@ -138,7 +157,7 @@ private List<Document> searchKeyword() throws IOException, ParseException {
     // Create a query parser with the specified analyzer
     QueryParser queryParser = new MultiFieldQueryParser(getFieldNames(keywordIndexReader), new KeywordAnalyzer());
     Query query = queryParser.parse(currentQuery);
-
+    
     // Get the top hits from the search and iterate through them
     int numHits = LuceneConstants.PAGE_SIZE * currentPage;
     topDocs = keywordIndexSearcher.search(query, numHits);
@@ -155,6 +174,16 @@ private List<Document> searchKeyword() throws IOException, ParseException {
             results.add(hitDoc);
         }
     }
+
+    if(isGrouped) {
+		TopGroups<BytesRef> topGroups = groupingKeywordResults("Year",query);
+		for (int i=0; i<topGroups.groups.length; i++) {
+			  ScoreDoc sdoc = topGroups.groups[i].scoreDocs[0]; // first result of each group
+			  Document d = keywordIndexSearcher.doc(sdoc.doc);
+			  results.add(d);
+		}
+	}
+    
     printKeywordIndexer();
     // Return the list of results
     return results;
@@ -187,7 +216,7 @@ private String[] getFieldNames(IndexReader reader) throws IOException {
 	public List<Document> getNextPage() throws IOException, ParseException {
 		if (hasNextPage()) {
 			currentPage++;
-			return search(currentQuery, currentField);
+			return search(currentQuery, currentField,isGrouped);
 		}
 		return Collections.emptyList();
   }
@@ -196,7 +225,7 @@ private String[] getFieldNames(IndexReader reader) throws IOException {
 	public List<Document> getPreviousPage() throws IOException, ParseException {
 		if (hasPreviousPage()) {
 			currentPage--;
-			return search(currentQuery, currentField);
+			return search(currentQuery, currentField,isGrouped);
 		}
 		return Collections.emptyList();
 	}
@@ -228,8 +257,36 @@ private String[] getFieldNames(IndexReader reader) throws IOException {
 		    }
 		}
 	}
-
-
+	
+	// Group by the specified field
+	public TopGroups<BytesRef> groupingKeywordResults(String groupingField,Query query) throws IOException{
+		
+	 	GroupingSearch groupingSearch = new GroupingSearch(groupingField);
+	 	Sort groupSort = new Sort(new SortField(groupingField, SortField.Type.STRING));
+	 	//Sort groupSort = Sort.RELEVANCE;
+	 	groupingSearch.setGroupDocsLimit(50);
+	 	groupingSearch.setGroupSort(groupSort);
+	 	groupingSearch.setSortWithinGroup(groupSort);
+	    TopGroups<BytesRef> topGroups = groupingSearch.search(keywordIndexSearcher, query, 0, 50);
+	    
+	    return topGroups;
+	}
+	
+	// Group by the specified field
+	public TopGroups<BytesRef> groupingStandardResults(String groupingField,Query query) throws IOException{
+		
+	 	GroupingSearch groupingSearch = new GroupingSearch(groupingField);
+	 	//int yearNumeric = Integer.parseInt(groupingField);
+	 	Sort groupSort = new Sort(new SortField(groupingField, SortField.Type.STRING));
+	 	//Sort groupSort = Sort.RELEVANCE;
+	 	groupingSearch.setGroupDocsLimit(50);
+	 	groupingSearch.setGroupSort(groupSort);
+	 	groupingSearch.setSortWithinGroup(groupSort);
+	    TopGroups<BytesRef> topGroups = groupingSearch.search(standardIndexSearcher, query, 0, 50);
+	    
+	    return topGroups;
+	}
+	
 	public void close() throws IOException {
 		this.keywordIndexDirectory.close();
 		this.standardIndexDirectory.close();

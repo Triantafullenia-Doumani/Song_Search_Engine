@@ -11,6 +11,7 @@ import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -40,6 +41,8 @@ public class LuceneGUI implements ActionListener {
 	private JLabel pageNumberLabel;
 	private JButton prevButton;
 	private JButton nextButton;
+	private JCheckBox groupingCheckBox;
+	
 	private int currentPage = 1;
     private Searcher searcher;
     
@@ -58,16 +61,20 @@ public class LuceneGUI implements ActionListener {
 		JPanel contentPane = new JPanel();
 		contentPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		contentPane.setLayout(new BorderLayout());
-
-		// Create the query panel with the query text field, field combo box and search button
+		
+		
+		// Create the query panel with the query text field, field combo box, search button and grouping checkbox
 		JPanel queryPanel = new JPanel(new GridLayout(1, 0, 10, 0));
 		queryTextField = new JTextField();
 		fieldComboBox = new JComboBox<>(new String[]{"General Search","Artist", "Title", "Album", "Date", "Lyrics", "Year"});
 		searchButton = new JButton("Search");
+		groupingCheckBox = new JCheckBox("Sort results by Artist", true);
+
 		searchButton.addActionListener(this);
 		queryPanel.add(queryTextField);
 		queryPanel.add(fieldComboBox);
 		queryPanel.add(searchButton);
+		queryPanel.add(groupingCheckBox);
 
 		// Create the results panel with the results text area and pagination controls
 		JPanel resultsPanel = new JPanel(new BorderLayout());
@@ -98,16 +105,22 @@ public class LuceneGUI implements ActionListener {
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
     }
-
+    
     // Method to handle the search button click
     @Override
     public void actionPerformed(ActionEvent event) {
+    	boolean isGrouped;
         if (event.getActionCommand().equals("Search")) {
         	String queryString = queryTextField.getText().trim();
         	String field = (String) fieldComboBox.getSelectedItem();
+        	if(groupingCheckBox.isSelected()) {
+            	isGrouped = true;
+        	} else {
+        		isGrouped = false;
+        	}
             List<Document> results;
             try {
-                results = searcher.search(queryString, field);
+                results = searcher.search(queryString, field,isGrouped);
                 displayResults(results);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -138,7 +151,8 @@ public class LuceneGUI implements ActionListener {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
-        }
+        } 
+        
     }
     private void displayResults(List<Document> results) {
     	String queryString = queryTextField.getText().trim();
@@ -147,26 +161,28 @@ public class LuceneGUI implements ActionListener {
         resultsTextArea.setText("");
         Highlighter highlighter = resultsTextArea.getHighlighter();
         highlighter.removeAllHighlights();
+        if(groupingCheckBox.isSelected()) {
+        	
+        }
         for (Document result : results) {
             String title = result.get("Title");
             String artist = result.get("Artist");
             String year = result.get("Year");
             String resultString = title + " by " + artist + " (" + year + ")\n";
             resultsTextArea.append(resultString);
-            if (field.equals("General Search")) {
-                int startIndex = resultString.indexOf(queryString);
-                if (startIndex != -1) {
-                    try {
-                        highlighter.addHighlight(
-                                resultsTextArea.getText().indexOf(resultString) + startIndex,
-                                resultsTextArea.getText().indexOf(resultString) + startIndex + queryString.length(),
-                                new DefaultHighlighter.DefaultHighlightPainter(Color.PINK)
-                        );
-                    } catch (BadLocationException e) {
-                        e.printStackTrace();
-                    }
+            int startIndex = resultString.indexOf(queryString);
+            if (startIndex != -1) {
+                try {
+                    highlighter.addHighlight(
+                            resultsTextArea.getText().indexOf(resultString) + startIndex,
+                            resultsTextArea.getText().indexOf(resultString) + startIndex + queryString.length(),
+                            new DefaultHighlighter.DefaultHighlightPainter(Color.PINK)
+                    );
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
                 }
             }
+            
         }
         // Enable or disable the "Previous" button based on the value of searcher.hasNextPage()
         if (searcher.hasNextPage()) {
