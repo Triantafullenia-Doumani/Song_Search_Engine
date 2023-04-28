@@ -53,6 +53,8 @@ public class Searcher {
 	private String currentField;
 	private boolean isGrouped;
 	
+	List<String> history = new ArrayList<String>();
+	
   public Searcher() throws IOException{
 
 	// Open keyword index directory
@@ -107,15 +109,18 @@ public class Searcher {
 
 private List<Document> searchStandard(boolean isGrouped) throws IOException, ParseException {
 	 List<Document> results = new ArrayList<Document>();
-	  
-	  // Preprocess the query text
+	 
+	 
+	 // Preprocess the query text
     currentQuery = preprocessText(currentQuery);
     // Create a query parser with the specified field and analyzer
 	QueryParser queryParser = new QueryParser(currentField, new StandardAnalyzer());
 	Query query = queryParser.parse(currentQuery);
 	
-	
-    // Get the top hits from the search and iterate through them
+	addHistory(currentQuery);
+    //System.out.println(currentQuery);
+
+	// Get the top hits from the search and iterate through them
     int numHits = LuceneConstants.PAGE_SIZE * currentPage;
     topDocs = standardIndexSearcher.search(query, numHits);
     ScoreDoc[] hits = topDocs.scoreDocs;
@@ -150,7 +155,7 @@ private List<Document> searchStandard(boolean isGrouped) throws IOException, Par
 }
 private List<Document> searchKeyword(boolean isGrouped) throws IOException, ParseException {
     List<Document> results = new ArrayList<Document>();
-
+    
     // Preprocess the query text
     currentQuery = preprocessText(currentQuery);
 
@@ -158,6 +163,8 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
     QueryParser queryParser = new MultiFieldQueryParser(getFieldNames(keywordIndexReader), new KeywordAnalyzer());
     Query query = queryParser.parse(currentQuery);
     
+    addHistory(currentQuery);
+    //System.out.println(currentQuery);
     // Get the top hits from the search and iterate through them
     int numHits = LuceneConstants.PAGE_SIZE * currentPage;
     topDocs = keywordIndexSearcher.search(query, numHits);
@@ -184,7 +191,7 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
 		}
 	}
     
-    printKeywordIndexer();
+    //printKeywordIndexer();
     // Return the list of results
     return results;
 }
@@ -287,6 +294,33 @@ private String[] getFieldNames(IndexReader reader) throws IOException {
 	    return topGroups;
 	}
 	
+	// Add the string query to a list for keeping history
+	public void addHistory(String text) {
+		if (history.contains(text)) {
+	        return;
+	    }
+		if(history.size() == 10) {
+			history.remove(0);
+		}
+		
+		history.add(text);
+		/*for(int i=0; i<history.size(); i++) {
+			System.out.println(history.get(i));
+		}**/
+	}
+	public List<String> searchHistory(String text) {
+		List<String> historyList = new ArrayList<String>();
+		for(String i:history) {
+			if(i.startsWith(text)) {
+				historyList.add(i);
+				System.out.println("HISTORY: \n"+i);
+			}
+		}
+		/*for(int k=0; k<historyList.size(); k++) {
+			System.out.println(historyList.get(k));
+		}*/
+			return historyList;
+	}
 	public void close() throws IOException {
 		this.keywordIndexDirectory.close();
 		this.standardIndexDirectory.close();
@@ -298,6 +332,7 @@ private String[] getFieldNames(IndexReader reader) throws IOException {
 	   // Lower case the text
 	   text = text.toLowerCase();
 	   // Trim leading and trailing whitespace
-
+       text = text.trim();
+       return text;
 	}
 }
