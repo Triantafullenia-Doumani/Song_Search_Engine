@@ -195,16 +195,18 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 
             resultsTextArea.append(resultString);
             int startIndex = resultString.indexOf(queryString);
-            if (startIndex != -1) {
-                try {
-                    highlighter.addHighlight(
-                            resultsTextArea.getText().indexOf(resultString) + startIndex,
-                            resultsTextArea.getText().indexOf(resultString) + startIndex + queryString.length(),
-                            new DefaultHighlighter.DefaultHighlightPainter(Color.PINK)
-                    );
-                } catch (BadLocationException e) {
-                    e.printStackTrace();
-                }
+            if(field.equals("General Search")) {
+	            if (startIndex != -1) {
+	                try {
+	                    highlighter.addHighlight(
+	                            resultsTextArea.getText().indexOf(resultString) + startIndex,
+	                            resultsTextArea.getText().indexOf(resultString) + startIndex + queryString.length(),
+	                            new DefaultHighlighter.DefaultHighlightPainter(Color.PINK)
+	                    );
+	                } catch (BadLocationException e) {
+	                    e.printStackTrace();
+	                }
+	            }
             }
             
         }

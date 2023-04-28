@@ -14,6 +14,8 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.SortedDocValuesField;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -21,6 +23,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.BytesRef;
 
 
 public class StandardIndexer {
@@ -78,8 +81,12 @@ public class StandardIndexer {
 		        	// Preprocess text
 		            text = preprocessText(text);
 		        }
-		        		        // Add field to document
-		        doc.add(new TextField(header, text, Field.Store.YES));
+				if (header.equals(LuceneConstants.GROUP)) {
+					doc.add(new SortedDocValuesField (header, new BytesRef(text) ));
+					doc.add(new StoredField(header, text));
+				}else {
+					doc.add(new TextField(header, text, Field.Store.YES));
+				}
 		    }
 		    // Add document to the index
 		    this.indexWriter.addDocument(doc);
