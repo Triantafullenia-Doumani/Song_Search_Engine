@@ -75,9 +75,9 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 		// Create the query panel with the query text field, field combo box, search button and grouping checkbox
 		JPanel queryPanel = new JPanel(new GridLayout(1, 0, 10, 0));
 		queryTextField = new JTextField();
-		fieldComboBox = new JComboBox<>(new String[]{"General Search","Artist", "Title", "Album", "Date", "Lyrics", "Year"});
+		fieldComboBox = new JComboBox<>(new String[]{"As Keyword","Artist", "Title", "Album", "Date", "Lyrics", "Year"});
 		searchButton = new JButton("Search");
-		groupingCheckBox = new JCheckBox("Sort results by Artist", false);
+		groupingCheckBox = new JCheckBox("Sort results by Year", false);
 		searchButton.addActionListener(this);
 		queryTextField.getDocument().addDocumentListener(this);
 		queryPanel.add(queryTextField);
@@ -195,7 +195,7 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 
             resultsTextArea.append(resultString);
             int startIndex = resultString.indexOf(queryString);
-            if(field.equals("General Search")) {
+            if(field.equals("As Keyword")) {
 	            if (startIndex != -1) {
 	                try {
 	                    highlighter.addHighlight(
