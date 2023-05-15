@@ -94,7 +94,7 @@ public class Searcher {
 	  this.currentField = currentField;
 	  this.isGrouped = isGrouped;
 	  
-	  if(currentField.equals("General Search")) {
+	  if(currentField.equals("As Keyword")) {
 		  System.out.println("Searching in keyword Indexer...");
 		  results = searchKeyword(isGrouped);
 	  }else {
@@ -124,17 +124,9 @@ private List<Document> searchStandard(boolean isGrouped) throws IOException, Par
 	addHistory(currentQuery);
     //System.out.println(currentQuery);
 	
-    // Calculate the start and end indices for the current page
-	int numOut = LuceneConstants.PAGE_SIZE * currentPage;	
-    int start = LuceneConstants.PAGE_SIZE * (currentPage - 1);
-    int end = Math.min(numOut, start + LuceneConstants.PAGE_SIZE);
-    
-    if(isGrouped) {
-    	List<GroupDocs<BytesRef>> resultsGrouped = new ArrayList<>();
-		System.out.println("Grouped results");
-		topGroups =  groupingStandardResults( query);
-		System.out.println("Number of groups: " + topGroups.groups.length);
-
+    if (isGrouped) {
+        topGroups = groupingStandardResults(query);
+        GroupDocs<BytesRef>[] groups = topGroups.groups;
 	    GroupDocs<BytesRef>[] groups = topGroups.groups;
 		// Iterate through the groups on the current page and add the documents to the list of results
 		if (groups.length > 0) {
@@ -190,7 +182,6 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
     
 
     addHistory(currentQuery);
-
     // Calculate the start and end indices for the current page
 	int numOut = LuceneConstants.PAGE_SIZE * currentPage;	
     int start = LuceneConstants.PAGE_SIZE * (currentPage - 1);
@@ -223,6 +214,11 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
 			  }
 		}
     }else {  
+        // Calculate the start and end indices for the current page
+    	int numOut = LuceneConstants.PAGE_SIZE * currentPage;	
+        int start = LuceneConstants.PAGE_SIZE * (currentPage - 1);
+        int end = Math.min(numOut, start + LuceneConstants.PAGE_SIZE);
+        
 	    topDocs = keywordIndexSearcher.search(query, numOut);
 	    ScoreDoc[] hits = topDocs.scoreDocs;
 	    
@@ -255,17 +251,20 @@ private String[] getFieldNames(IndexReader reader) throws IOException {
     return fieldSet.toArray(new String[fieldSet.size()]);
 }
 
-	// @return True if there is a next page, false otherwise.
+	//@return True if there is a next page, false otherwise.
 	public boolean hasNextPage() {
-		int numHits;
-		if(isGrouped) {
-			numHits = (int) topGroups.totalHitCount;
-		}else {
-			 numHits = (int) topDocs.totalHits.value;
-		}
-		int maxPage = numHits / LuceneConstants.PAGE_SIZE + (numHits % LuceneConstants.PAGE_SIZE == 0 ? 0 : 1);
-		return currentPage < maxPage;
+	 int numHits;
+	 int maxPage;
+	 if (isGrouped) {
+	     numHits = topGroups.groups.length;
+	     maxPage = numHits;
+	 } else {
+	     numHits = (int) topDocs.totalHits.value;
+	     maxPage = numHits / LuceneConstants.PAGE_SIZE + (numHits % LuceneConstants.PAGE_SIZE == 0 ? 0 : 1);
+	 }
+	 return currentPage < maxPage;
 	}
+
 
 	// @return True if there is a previous page, false otherwise.
 	public boolean hasPreviousPage() {
