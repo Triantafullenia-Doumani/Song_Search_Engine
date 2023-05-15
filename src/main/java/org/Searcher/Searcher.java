@@ -123,11 +123,17 @@ private List<Document> searchStandard(boolean isGrouped) throws IOException, Par
 
 	addHistory(currentQuery);
     //System.out.println(currentQuery);
-	
+    addHistory(currentQuery);
+    // Calculate the start and end indices for the current page
+	int numOut = LuceneConstants.PAGE_SIZE * currentPage;	
+    int start = LuceneConstants.PAGE_SIZE * (currentPage - 1);
+    int end = Math.min(numOut, start + LuceneConstants.PAGE_SIZE);
+    
     if (isGrouped) {
+    	List<GroupDocs<BytesRef>> resultsGrouped = new ArrayList<>();
+		System.out.println("Grouped results");
         topGroups = groupingStandardResults(query);
         GroupDocs<BytesRef>[] groups = topGroups.groups;
-	    GroupDocs<BytesRef>[] groups = topGroups.groups;
 		// Iterate through the groups on the current page and add the documents to the list of results
 		if (groups.length > 0) {
 		    for (int i = start; i < end; i++) {
@@ -214,11 +220,6 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
 			  }
 		}
     }else {  
-        // Calculate the start and end indices for the current page
-    	int numOut = LuceneConstants.PAGE_SIZE * currentPage;	
-        int start = LuceneConstants.PAGE_SIZE * (currentPage - 1);
-        int end = Math.min(numOut, start + LuceneConstants.PAGE_SIZE);
-        
 	    topDocs = keywordIndexSearcher.search(query, numOut);
 	    ScoreDoc[] hits = topDocs.scoreDocs;
 	    
