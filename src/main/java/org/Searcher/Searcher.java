@@ -127,29 +127,30 @@ private List<Document> searchStandard(boolean isGrouped) throws IOException, Par
     if (isGrouped) {
         topGroups = groupingStandardResults(query);
         GroupDocs<BytesRef>[] groups = topGroups.groups;
+	    GroupDocs<BytesRef>[] groups = topGroups.groups;
+		// Iterate through the groups on the current page and add the documents to the list of results
+		if (groups.length > 0) {
+		    for (int i = start; i < end; i++) {
+		        GroupDocs<BytesRef> group = groups[i];
+		        resultsGrouped.add(group);
+				System.out.println("NUM OF GROUPS"+groups.length);
 
-        // Calculate the start index for the current page
-        int numGroups = groups.length;
-        int startIndex = (currentPage - 1);
-
-        // Add the documents from the selected group to the list of results
-        if (startIndex >= 0 && startIndex < numGroups) {
-            GroupDocs<BytesRef> group = groups[startIndex];
-            for (ScoreDoc scoreDoc : group.scoreDocs) {
-                try {
-                    Document doc = standardIndexSearcher.doc(scoreDoc.doc);
-                    results.add(doc);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }else {
-        // Calculate the start and end indices for the current page
-    	int numOut = LuceneConstants.PAGE_SIZE * currentPage;	
-        int start = LuceneConstants.PAGE_SIZE * (currentPage - 1);
-        int end = Math.min(numOut, start + LuceneConstants.PAGE_SIZE);
-        
+		    }
+		}
+		// convert to List<Document> to return it 
+		for (GroupDocs<BytesRef> group : resultsGrouped) {
+			  for (ScoreDoc scoreDoc : group.scoreDocs) {
+			      try {
+			          Document doc =  standardIndexSearcher.doc(scoreDoc.doc);
+			          float score = scoreDoc.score;
+			          System.out.println("Matching Score:"+score);
+			          results.add(doc);
+			      } catch (IOException e) {
+			    	  e.printStackTrace();
+			      }
+			  }
+		}
+    }else {    
         topDocs = standardIndexSearcher.search(query, numOut);
         ScoreDoc[] hits = topDocs.scoreDocs;
 	    StoredFields storedFields = standardIndexSearcher.storedFields();
@@ -157,6 +158,8 @@ private List<Document> searchStandard(boolean isGrouped) throws IOException, Par
 	        for (int i = start; i < end; i++) {
 	            // Get the document object for the current hit
 	            Document hitDoc = storedFields.document(hits[i].doc);
+	            float score = hits[i].score;
+	            System.out.println("Matching Score:"+score);
 	            // Add the document object to the list of results
 	            results.add(hitDoc);
 	        }
@@ -179,27 +182,37 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
     
 
     addHistory(currentQuery);
-
-    if (isGrouped) {
-        topGroups = groupingKeywordResults(query);
-        GroupDocs<BytesRef>[] groups = topGroups.groups;
-
-        // Calculate the start index for the current page
-        int numGroups = groups.length;
-        int startIndex = (currentPage - 1);
-
-        // Add the documents from the selected group to the list of results
-        if (startIndex >= 0 && startIndex < numGroups) {
-            GroupDocs<BytesRef> group = groups[startIndex];
-            for (ScoreDoc scoreDoc : group.scoreDocs) {
-                try {
-                    Document doc = keywordIndexSearcher.doc(scoreDoc.doc);
-                    results.add(doc);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+    // Calculate the start and end indices for the current page
+	int numOut = LuceneConstants.PAGE_SIZE * currentPage;	
+    int start = LuceneConstants.PAGE_SIZE * (currentPage - 1);
+    int end = Math.min(numOut, start + LuceneConstants.PAGE_SIZE);
+    
+    if(isGrouped) {
+    	List<GroupDocs<BytesRef>> resultsGrouped = new ArrayList<>();
+		System.out.println("Grouped results");
+		topGroups =  groupingKeywordResults(query);
+		
+	    GroupDocs<BytesRef>[] groups = topGroups.groups;
+		// Iterate through the groups on the current page and add the documents to the list of results
+	    if (groups.length > 0) {
+		    for (int i = start; i < end; i++) {
+		        GroupDocs<BytesRef> group = groups[i];
+		        resultsGrouped.add(group);
+		    }
+		}
+		// convert to List<Document> to return it 
+		for (GroupDocs<BytesRef> group : resultsGrouped) {
+			  for (ScoreDoc scoreDoc : group.scoreDocs) {
+			      try {
+			          Document doc = keywordIndexSearcher.doc(scoreDoc.doc);
+			          float score = scoreDoc.score;
+			          System.out.println("Matching Score:"+score);
+			          results.add(doc);
+			      } catch (IOException e) {
+			    	  e.printStackTrace();
+			      }
+			  }
+		}
     }else {  
         // Calculate the start and end indices for the current page
     	int numOut = LuceneConstants.PAGE_SIZE * currentPage;	
@@ -214,6 +227,8 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
 	        for (int i = start; i < end; i++) {
 	            // Get the document object for the current hit
 	            Document hitDoc = storedFields.document(hits[i].doc);
+	            float score = hits[i].score;
+	            System.out.println("Matching Score:"+score);
 	            // Add the document object to the list of results
 	            results.add(hitDoc);
 	        }
@@ -305,10 +320,11 @@ private String[] getFieldNames(IndexReader reader) throws IOException {
 	// Group by the specified field
 	public TopGroups<BytesRef> groupingKeywordResults(Query query) throws IOException{
 		
+		
 	 	GroupingSearch groupingSearch = new GroupingSearch(LuceneConstants.GROUP);
 	 	Sort groupSort = new Sort(new SortField(LuceneConstants.GROUP, SortField.Type.STRING));
 	 	//Sort groupSort = Sort.RELEVANCE;
-	 	groupingSearch.setGroupDocsLimit(50);
+	 	groupingSearch.setGroupDocsLimit(50); //posa apotelesmata na exei to kathe group
 	 	groupingSearch.setGroupSort(groupSort);
 	 	groupingSearch.setSortWithinGroup(groupSort);
 	    TopGroups<BytesRef> topGroups = groupingSearch.search(keywordIndexSearcher, query, 0, 50);
