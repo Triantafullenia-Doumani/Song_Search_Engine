@@ -32,6 +32,7 @@ import javax.swing.text.Highlighter;
 import org.Indexer.KeywordIndexer;
 import org.Indexer.StandardIndexer;
 import org.Searcher.Searcher;
+import org.apache.log4j.BasicConfigurator;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 
@@ -77,7 +78,7 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 		queryTextField = new JTextField();
 		fieldComboBox = new JComboBox<>(new String[]{"General Search","Artist", "Title", "Album", "Date", "Lyrics", "Year"});
 		searchButton = new JButton("Search");
-		groupingCheckBox = new JCheckBox("Sort results by Artist", false);
+		groupingCheckBox = new JCheckBox("Sort results by Year", false);
 		searchButton.addActionListener(this);
 		queryTextField.getDocument().addDocumentListener(this);
 		queryPanel.add(queryTextField);
@@ -195,19 +196,19 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 
             resultsTextArea.append(resultString);
             int startIndex = resultString.indexOf(queryString);
-            if(field.equals("General Search")) {
-	            if (startIndex != -1) {
-	                try {
-	                    highlighter.addHighlight(
-	                            resultsTextArea.getText().indexOf(resultString) + startIndex,
-	                            resultsTextArea.getText().indexOf(resultString) + startIndex + queryString.length(),
-	                            new DefaultHighlighter.DefaultHighlightPainter(Color.PINK)
-	                    );
-	                } catch (BadLocationException e) {
-	                    e.printStackTrace();
-	                }
-	            }
+            //if(field.equals("General Search")) {
+            if (startIndex != -1) {
+                try {
+                    highlighter.addHighlight(
+                            resultsTextArea.getText().indexOf(resultString) + startIndex,
+                            resultsTextArea.getText().indexOf(resultString) + startIndex + queryString.length(),
+                            new DefaultHighlighter.DefaultHighlightPainter(Color.PINK)
+                    );
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
+                }
             }
+            //}
             
         }
         
@@ -262,7 +263,8 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     }
     
     public static void main(String[] args) throws IOException, CsvException {
-        new StandardIndexer();
+    	//BasicConfigurator.configure();
+    	new StandardIndexer();
         new KeywordIndexer();
         Searcher searcher = new Searcher();
         new LuceneGUI( searcher);

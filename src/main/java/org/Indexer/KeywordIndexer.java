@@ -16,7 +16,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
-import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -25,6 +24,8 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
+import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
+import org.deeplearning4j.models.word2vec.Word2Vec;
 
 public class KeywordIndexer {
 
@@ -78,13 +79,43 @@ public class KeywordIndexer {
 	            }else {
 	            	// Preprocess text
 		            text = preprocessText(text);
-	            }	        
-				if (header.equals(LuceneConstants.GROUP)) {
+	            }
+	            
+	            // Load the pretrained model
+	            Word2Vec word2Vec = WordVectorSerializer.readWord2VecModel(new File(LuceneConstants.MODEL_PATH_AND_FILE_NAME));
+	            // Create an array to store the vector representation
+	            double[] vector = new double[word2Vec.getLayerSize()];
+	            // Split the text field into individual words
+	            String[] words = text.split("\\s+");
+	            
+	            // Group the word vectors to obtain the vector representation for the text field
+	            for (String word : words) {
+	                double[] wordVector = word2Vec.getWordVector(word);
+	                if (wordVector != null) {
+	                    for (int i = 0; i < vector.length; i++) {
+	                        vector[i] += wordVector[i];
+	                    }
+	                }
+	            }
+	            //By dividing each element of the vector by the number of words, the resulting vector representation
+	            //will have an average value across all dimensions. This normalization  helps in comparing and measuring 
+	            //the similarity between different vector representations.
+	            for (int i = 0; i < vector.length; i++) {
+	                vector[i] /= words.length;
+	            }
+
+	            
+	            
+	            if (header.equals(LuceneConstants.GROUP)) {
 					doc.add(new SortedDocValuesField (header, new BytesRef(text) ));
 					doc.add(new StoredField(header, text));
 				}else {
 					doc.add(new TextField(header, text, Field.Store.YES));
 				}
+	            
+	            // Create a stored field for the vector and add it to the document
+	            Field vectorField = new StoredField(header + "_vector", vector.toString());
+	            doc.add(vectorField);
 		    }
 		    // Add document to the index
 		    this.indexWriter.addDocument(doc);

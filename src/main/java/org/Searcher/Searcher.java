@@ -141,6 +141,8 @@ private List<Document> searchStandard(boolean isGrouped) throws IOException, Par
 		    for (int i = start; i < end; i++) {
 		        GroupDocs<BytesRef> group = groups[i];
 		        resultsGrouped.add(group);
+				System.out.println("NUM OF GROUPS"+groups.length);
+
 		    }
 		}
 		// convert to List<Document> to return it 
@@ -148,6 +150,8 @@ private List<Document> searchStandard(boolean isGrouped) throws IOException, Par
 			  for (ScoreDoc scoreDoc : group.scoreDocs) {
 			      try {
 			          Document doc =  standardIndexSearcher.doc(scoreDoc.doc);
+			          float score = scoreDoc.score;
+			          System.out.println("Matching Score:"+score);
 			          results.add(doc);
 			      } catch (IOException e) {
 			    	  e.printStackTrace();
@@ -162,6 +166,8 @@ private List<Document> searchStandard(boolean isGrouped) throws IOException, Par
 	        for (int i = start; i < end; i++) {
 	            // Get the document object for the current hit
 	            Document hitDoc = storedFields.document(hits[i].doc);
+	            float score = hits[i].score;
+	            System.out.println("Matching Score:"+score);
 	            // Add the document object to the list of results
 	            results.add(hitDoc);
 	        }
@@ -193,11 +199,11 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
     if(isGrouped) {
     	List<GroupDocs<BytesRef>> resultsGrouped = new ArrayList<>();
 		System.out.println("Grouped results");
-		topGroups =  groupingStandardResults( query);
+		topGroups =  groupingKeywordResults(query);
 		
 	    GroupDocs<BytesRef>[] groups = topGroups.groups;
 		// Iterate through the groups on the current page and add the documents to the list of results
-		if (groups.length > 0) {
+	    if (groups.length > 0) {
 		    for (int i = start; i < end; i++) {
 		        GroupDocs<BytesRef> group = groups[i];
 		        resultsGrouped.add(group);
@@ -208,6 +214,8 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
 			  for (ScoreDoc scoreDoc : group.scoreDocs) {
 			      try {
 			          Document doc = keywordIndexSearcher.doc(scoreDoc.doc);
+			          float score = scoreDoc.score;
+			          System.out.println("Matching Score:"+score);
 			          results.add(doc);
 			      } catch (IOException e) {
 			    	  e.printStackTrace();
@@ -223,6 +231,8 @@ private List<Document> searchKeyword(boolean isGrouped) throws IOException, Pars
 	        for (int i = start; i < end; i++) {
 	            // Get the document object for the current hit
 	            Document hitDoc = storedFields.document(hits[i].doc);
+	            float score = hits[i].score;
+	            System.out.println("Matching Score:"+score);
 	            // Add the document object to the list of results
 	            results.add(hitDoc);
 	        }
@@ -311,10 +321,11 @@ private String[] getFieldNames(IndexReader reader) throws IOException {
 	// Group by the specified field
 	public TopGroups<BytesRef> groupingKeywordResults(Query query) throws IOException{
 		
+		
 	 	GroupingSearch groupingSearch = new GroupingSearch(LuceneConstants.GROUP);
 	 	Sort groupSort = new Sort(new SortField(LuceneConstants.GROUP, SortField.Type.STRING));
 	 	//Sort groupSort = Sort.RELEVANCE;
-	 	groupingSearch.setGroupDocsLimit(50);
+	 	groupingSearch.setGroupDocsLimit(50); //posa apotelesmata na exei to kathe group
 	 	groupingSearch.setGroupSort(groupSort);
 	 	groupingSearch.setSortWithinGroup(groupSort);
 	    TopGroups<BytesRef> topGroups = groupingSearch.search(keywordIndexSearcher, query, 0, 50);
