@@ -1,5 +1,6 @@
 /data/index
 lib/
 target/
+/data/pretrained-model
 .classpath
 .project
