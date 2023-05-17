@@ -4,9 +4,14 @@ import org.Constants.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -21,23 +26,26 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 
-public class StandardIndexer {
-
+public class StandardIndexerImpl implements Indexer{
 	IndexWriter indexWriter;
 	CSVParser parser;
 
-
-	public StandardIndexer() throws IOException {
+	@Override
+	public void createIndexer() throws IOException {
 		
 		System.out.println("Standard Analyzer: ");
-	    // Initialize index directory
-		Directory index = FSDirectory.open(Paths.get(LuceneConstants.STANDARD_INDEX_FILE_PATH));
+		// Load the pretrained model
+        Word2Vec word2Vec = WordVectorSerializer.readWord2VecModel(new File(LuceneConstants.MODEL_PATH_AND_FILE_NAME));
+        // Initialize index directory
+        Directory index = FSDirectory.open(Paths.get(LuceneConstants.STANDARD_INDEX_FILE_PATH));
 	    if (!DirectoryReader.indexExists(index)) {
 	    	System.out.println("	Index does not exist");
 	    } else {
@@ -70,6 +78,9 @@ public class StandardIndexer {
 		for (CSVRecord record : parser) {
 		    // Create new document for each record
 		    Document doc = new Document();
+	        
+		    // Create an array to store the vector representation
+		    double[] vector = new double[word2Vec.getLayerSize()];
 		    
 		    // Add each field to the document
 		    for (String header : headerMap.keySet()) {
@@ -79,14 +90,8 @@ public class StandardIndexer {
 		        // @TOFIX synexisei na bazei ta anepithimita string mesa
 		        if((text.equals("lyrics for this song have yet to be released please check back once the song has been released")) || (text.equals("unreleased songs")) || (text.equals("unreleased"))) {
 		        	text = "";	
-		        }else {
-		        	// Preprocess text
-		            text = preprocessText(text);
 		        }
-		     // Load the pretrained model
-	            Word2Vec word2Vec = WordVectorSerializer.readWord2VecModel(new File(LuceneConstants.MODEL_PATH_AND_FILE_NAME));
-	            // Create an array to store the vector representation
-	            double[] vector = new double[word2Vec.getLayerSize()];
+
 	            // Split the text field into individual words
 	            String[] words = text.split("\\s+");
 	            
@@ -105,8 +110,6 @@ public class StandardIndexer {
 	            for (int i = 0; i < vector.length; i++) {
 	                vector[i] /= words.length;
 	            }
-
-	            
 				if (header.equals(LuceneConstants.GROUP)) {
 					doc.add(new SortedDocValuesField (header, new BytesRef(text) ));
 					doc.add(new StoredField(header, text));
@@ -114,27 +117,27 @@ public class StandardIndexer {
 					doc.add(new TextField(header, text, Field.Store.YES));
 				}
 				// Create a stored field for the vector and add it to the document
-	            Field vectorField = new StoredField(header + "_vector", vector.toString());
-	            doc.add(vectorField);
+				ByteBuffer byteBuffer = ByteBuffer.allocate(Double.BYTES * vector.length);
+				for (double v : vector) {
+				    byteBuffer.putDouble(v);
+				}
+				Field vectorField = new StoredField(header + "_vector", byteBuffer.array());
+				doc.add(vectorField);
+
 		    }
 		    // Add document to the index
 		    this.indexWriter.addDocument(doc);
+		    // Print vector for debugging
+		   // System.out.println("Vector: " + Arrays.toString(vector));
+
 		}
 		System.out.println("	New Index created successfully: Number of documents in the new index: " + this.indexWriter.numRamDocs()+"\n");
 		close();
-			
+		//Helper.printFieldNames(LuceneConstants.STANDARD_INDEX_FILE_PATH);
 	}
+	
 
-   private static String preprocessText(String text) {
-		// Remove all punctuation marks except hyphens, periods, and digits
-		text = text.replaceAll("[^a-zA-Z0-9\\s.-]", "");
-		// Lowercase the text
-		text = text.toLowerCase();
-		// Trim leading and trailing whitespace
-		text = text.trim();
-		return text;
-   }
-   
+	@Override
 	public void close() throws IOException {
 		this.indexWriter.close();
 		this.parser.close();
