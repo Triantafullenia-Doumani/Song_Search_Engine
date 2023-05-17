@@ -84,7 +84,10 @@ public class KeywordIndexerImpl implements Indexer{
 		    for (String header : headerMap.keySet()) {
 		        // Get the text value for the header
 		        String text = record.get(header);
-		        
+		        if(header.equals("Year")) {
+		        	text = text.replace(".0", "");
+		        	System.out.println(text);
+		        }
 		        // @TOFIX synexisei na bazei ta anepithimita string mesa
 		        if((text.equals("lyrics for this song have yet to be released please check back once the song has been released")) || (text.equals("unreleased songs")) || (text.equals("unreleased"))) {
 		        	text = "";	

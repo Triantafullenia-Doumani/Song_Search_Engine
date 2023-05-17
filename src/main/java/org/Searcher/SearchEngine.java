@@ -22,7 +22,7 @@ public class SearchEngine {
 	private String currentQuery;
 	private String currentField;
 	private boolean isGrouped;
-	private boolean senematicSearch;
+	private boolean semanticSearch;
 	
 	Searcher searcher;
 	History history;
@@ -38,17 +38,17 @@ public class SearchEngine {
    * @param numResults The maximum number of results to return.
    * @return A list of documents matching the query.
    */
-	 public List<Document> search(String currentQuery, String currentField,boolean isGrouped, boolean senematicSearch) throws IOException, ParseException {
+	 public List<Document> search(String currentQuery, String currentField,boolean isGrouped, boolean semanticSearch) throws IOException, ParseException {
 		  List<Document> results = new ArrayList<Document>();
 		  
 		  this.currentQuery = currentQuery;
 		  this.currentField = currentField;
 		  this.isGrouped = isGrouped;
-		  this.senematicSearch = senematicSearch;
+		  this.semanticSearch = semanticSearch;
 		  
 		  history.addHistory(currentQuery);
 		  
-	      searcher = SearcherFactory.createSearcher(currentField,senematicSearch);
+	      searcher = SearcherFactory.createSearcher(currentField,semanticSearch);
 
 		  results = searcher.search(currentQuery, currentField, isGrouped, currentPage);
 		  topDocs = searcher.getTopDocs();
@@ -84,7 +84,7 @@ public class SearchEngine {
 	public List<Document> getNextPage() throws IOException, ParseException {
 		if (hasNextPage()) {
 			currentPage++;
-			return search(currentQuery, currentField,isGrouped, senematicSearch);
+			return search(currentQuery, currentField,isGrouped, semanticSearch);
 		}
 		return Collections.emptyList();
   }
@@ -93,7 +93,7 @@ public class SearchEngine {
 	public List<Document> getPreviousPage() throws IOException, ParseException {
 		if (hasPreviousPage()) {
 			currentPage--;
-			return search(currentQuery, currentField,isGrouped,senematicSearch);
+			return search(currentQuery, currentField,isGrouped,semanticSearch);
 		}
 		return Collections.emptyList();
 	}
