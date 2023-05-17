@@ -34,7 +34,7 @@ import java.util.*;
 
 import org.Constants.LuceneConstants;
 
-public class SenematicSearcherImpl implements Searcher {
+public class SemanticSearcherImpl implements Searcher {
 	private Word2Vec word2Vec;
 	private IndexReader standardIndexReader;
 	
@@ -46,7 +46,7 @@ public class SenematicSearcherImpl implements Searcher {
 	private TopGroups<BytesRef> topGroups;
 	
 
-	public SenematicSearcherImpl() throws IOException {
+	public SemanticSearcherImpl() throws IOException {
 	    // Open standard index directory
 		this.standardIndexDirectory = FSDirectory.open(Paths.get(LuceneConstants.STANDARD_INDEX_FILE_PATH));
 		this.standardIndexReader = DirectoryReader.open(this.standardIndexDirectory);
