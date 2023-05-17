@@ -34,12 +34,13 @@ import org.apache.lucene.util.BytesRef;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 
-public class KeywordIndexer {
+public class KeywordIndexerImpl implements Indexer{
 
 	IndexWriter indexWriter;
 	CSVParser parser;
-
-	public KeywordIndexer() throws IOException {
+	
+	@Override
+	public void createIndexer() throws IOException {
 		
 		System.out.println("Keyword Analyzer: ");
 
@@ -89,7 +90,7 @@ public class KeywordIndexer {
 		        	text = "";	
 		        }else {
 		        	// Preprocess text
-		            text = preprocessText(text);
+		            text = Helper.preprocessText(text);
 		        }
      
 				if (header.equals(LuceneConstants.GROUP)) {
@@ -105,19 +106,9 @@ public class KeywordIndexer {
 		}
 		System.out.println("	New Index created successfully: Number of documents in the new index: " + this.indexWriter.numRamDocs()+"\n");
 		close();
+		//Helper.printFieldNames(LuceneConstants.KEYWORD_INDEX_FILE_PATH);
 	}
-	
-
-   private static String preprocessText(String text) {
-	    // Remove all punctuation marks except hyphens, periods, and digits
-	    text = text.replaceAll("[^a-zA-Z0-9\\s.-]", "");
-	    // Lowercase the text
-	    text = text.toLowerCase();
-	    // Trim leading and trailing whitespace
-	    text = text.trim();
-	    return text;
-   }
-   
+   @Override
    public void close() throws IOException {
 	   this.indexWriter.close();
 	   this.parser.close();

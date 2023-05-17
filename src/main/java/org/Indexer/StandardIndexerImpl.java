@@ -34,13 +34,12 @@ import org.apache.lucene.util.BytesRef;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 
-public class StandardIndexer {
-
+public class StandardIndexerImpl implements Indexer{
 	IndexWriter indexWriter;
 	CSVParser parser;
 
-
-	public StandardIndexer() throws IOException {
+	@Override
+	public void createIndexer() throws IOException {
 		
 		System.out.println("Standard Analyzer: ");
 		// Load the pretrained model
@@ -91,9 +90,6 @@ public class StandardIndexer {
 		        // @TOFIX synexisei na bazei ta anepithimita string mesa
 		        if((text.equals("lyrics for this song have yet to be released please check back once the song has been released")) || (text.equals("unreleased songs")) || (text.equals("unreleased"))) {
 		        	text = "";	
-		        }else {
-		        	// Preprocess text
-		            text = preprocessText(text);
 		        }
 
 	            // Split the text field into individual words
@@ -114,8 +110,6 @@ public class StandardIndexer {
 	            for (int i = 0; i < vector.length; i++) {
 	                vector[i] /= words.length;
 	            }
-
-	            
 				if (header.equals(LuceneConstants.GROUP)) {
 					doc.add(new SortedDocValuesField (header, new BytesRef(text) ));
 					doc.add(new StoredField(header, text));
@@ -139,40 +133,11 @@ public class StandardIndexer {
 		}
 		System.out.println("	New Index created successfully: Number of documents in the new index: " + this.indexWriter.numRamDocs()+"\n");
 		close();
-		printFieldNames();
+		//Helper.printFieldNames(LuceneConstants.STANDARD_INDEX_FILE_PATH);
 	}
 	
-	
-	private void printFieldNames() throws IOException {
-		Directory index = FSDirectory.open(Paths.get(LuceneConstants.STANDARD_INDEX_FILE_PATH));
 
-	    IndexReader reader = DirectoryReader.open(index);
-	    IndexSearcher searcher = new IndexSearcher(reader);
-	    Set<String> fieldNames = new HashSet<>();
-	    for (int i = 0; i < reader.maxDoc(); i++) {
-	        Document doc = reader.document(i);
-	        List<IndexableField> fields = doc.getFields();
-	        for (IndexableField field : fields) {
-	            fieldNames.add(field.name());
-	        }
-	    }
-	    System.out.println("Field Names:");
-	    for (String fieldName : fieldNames) {
-	        System.out.println(fieldName);
-	    }
-	    reader.close();
-	}
-
-   private static String preprocessText(String text) {
-		// Remove all punctuation marks except hyphens, periods, and digits
-		text = text.replaceAll("[^a-zA-Z0-9\\s.-]", "");
-		// Lowercase the text
-		text = text.toLowerCase();
-		// Trim leading and trailing whitespace
-		text = text.trim();
-		return text;
-   }
-   
+	@Override
 	public void close() throws IOException {
 		this.indexWriter.close();
 		this.parser.close();

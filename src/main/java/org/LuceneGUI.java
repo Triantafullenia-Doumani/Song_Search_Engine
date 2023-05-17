@@ -29,9 +29,11 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
-import org.Indexer.KeywordIndexer;
-import org.Indexer.StandardIndexer;
-import org.Searcher.Searcher;
+
+import org.Indexer.Indexer;
+import org.Indexer.KeywordIndexerImpl;
+import org.Indexer.StandardIndexerImpl;
+import org.Searcher.SearchEngine;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -54,10 +56,10 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 	private JList<String> similarityList;
 	
 	private int currentPage = 0;
-    private Searcher searcher;
+    private SearchEngine searcher;
     
     // Constructor for the GUI
-    public LuceneGUI(Searcher searcher) {
+    public LuceneGUI(SearchEngine searcher) {
         this.searcher = searcher;
         createGUI();
     }
@@ -271,10 +273,10 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     }
     
     public static void main(String[] args) throws IOException, CsvException {
-    	//new StandardIndexer();
-        //new KeywordIndexer();
-        Searcher searcher = new Searcher();
+    	Indexer standardIndexer = new StandardIndexerImpl();
+    	Indexer keywordIndexer = new StandardIndexerImpl();
+        SearchEngine searcher = new SearchEngine();
         new LuceneGUI( searcher);
-        searcher.close();
+        //searcher.close();
     }
 }
