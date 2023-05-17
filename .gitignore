@@ -4,3 +4,4 @@ target/
 /data/pretrained-model
 .classpath
 .project
+data/pretrained-model/

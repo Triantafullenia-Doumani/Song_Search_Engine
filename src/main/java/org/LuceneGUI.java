@@ -28,10 +28,10 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
-import org.Indexer.KeywordIndexer;
-import org.Indexer.StandardIndexer;
-import org.Searcher.Searcher;
-import org.apache.log4j.BasicConfigurator;
+
+import org.Indexer.Indexer;
+import org.Indexer.StandardIndexerImpl;
+import org.Searcher.SearchEngine;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 
@@ -49,13 +49,14 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 	private JButton prevButton;
 	private JButton nextButton;
 	private JCheckBox groupingCheckBox;
+	private JCheckBox senematicCheckBox;
 	private JList<String> similarityList;
 	
-	private int currentPage = 1;
-    private Searcher searcher;
+	private int currentPage = 0;
+    private SearchEngine searcher;
     
     // Constructor for the GUI
-    public LuceneGUI(Searcher searcher) {
+    public LuceneGUI(SearchEngine searcher) {
         this.searcher = searcher;
         createGUI();
     }
@@ -78,12 +79,14 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 		fieldComboBox = new JComboBox<>(new String[]{"As Keyword","Artist", "Title", "Album", "Date", "Lyrics", "Year"});
 		searchButton = new JButton("Search");
 		groupingCheckBox = new JCheckBox("Sort results by Year", false);
+		senematicCheckBox = new JCheckBox("Senematic Search", false);
 		searchButton.addActionListener(this);
 		queryTextField.getDocument().addDocumentListener(this);
 		queryPanel.add(queryTextField);
 		queryPanel.add(fieldComboBox);
 		queryPanel.add(searchButton);
 		queryPanel.add(groupingCheckBox);
+		queryPanel.add(senematicCheckBox);
 		
 		// Create the results panel with the results text area and pagination controls
 		JPanel resultsPanel = new JPanel(new BorderLayout());
@@ -127,8 +130,9 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     @Override
     public void actionPerformed(ActionEvent event) {
     	boolean isGrouped;
-    	
+    	boolean senematicSearch;
         if (event.getActionCommand().equals("Search")) {
+        	currentPage = 0;
         	String queryString = queryTextField.getText().trim();
         	String field = (String) fieldComboBox.getSelectedItem();
         	if(groupingCheckBox.isSelected()) {
@@ -136,10 +140,14 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
         	} else {
         		isGrouped = false;
         	}
+        	if(senematicCheckBox.isSelected()) {
+        		senematicSearch = true;
+        	} else {
+        		senematicSearch = false;
+        	}
             List<Document> results;
             try {
-                results = searcher.search(queryString, field,isGrouped);
-                //similarityList.addEventListener("click",valueChanged);
+                results = searcher.search(queryString, field,isGrouped, senematicSearch);
                 displayResults(results);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -195,19 +203,19 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 
             resultsTextArea.append(resultString);
             int startIndex = resultString.indexOf(queryString);
-            //if(field.equals("General Search")) {
-            if (startIndex != -1) {
-                try {
-                    highlighter.addHighlight(
-                            resultsTextArea.getText().indexOf(resultString) + startIndex,
-                            resultsTextArea.getText().indexOf(resultString) + startIndex + queryString.length(),
-                            new DefaultHighlighter.DefaultHighlightPainter(Color.PINK)
-                    );
-                } catch (BadLocationException e) {
-                    e.printStackTrace();
-                }
+            if(field.equals("As Keyword")) {
+	            if (startIndex != -1) {
+	                try {
+	                    highlighter.addHighlight(
+	                            resultsTextArea.getText().indexOf(resultString) + startIndex,
+	                            resultsTextArea.getText().indexOf(resultString) + startIndex + queryString.length(),
+	                            new DefaultHighlighter.DefaultHighlightPainter(Color.GREEN)
+	                    );
+	                } catch (BadLocationException e) {
+	                    e.printStackTrace();
+	                }
+	            }
             }
-            //}
             
         }
         
@@ -262,11 +270,10 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     }
     
     public static void main(String[] args) throws IOException, CsvException {
-    	//BasicConfigurator.configure();
-    	new StandardIndexer();
-        new KeywordIndexer();
-        Searcher searcher = new Searcher();
+    	Indexer standardIndexer = new StandardIndexerImpl();
+    	Indexer keywordIndexer = new StandardIndexerImpl();
+        SearchEngine searcher = new SearchEngine();
         new LuceneGUI( searcher);
-        searcher.close();
+        //searcher.close();
     }
 }
