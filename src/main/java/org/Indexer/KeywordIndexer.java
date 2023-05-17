@@ -82,7 +82,7 @@ public class KeywordIndexer {
 	            }
 	            
 	            // Load the pretrained model
-	            Word2Vec word2Vec = WordVectorSerializer.readWord2VecModel(new File(LuceneConstants.MODEL_PATH_AND_FILE_NAME));
+	           /* Word2Vec word2Vec = WordVectorSerializer.readWord2VecModel(new File(LuceneConstants.MODEL_PATH_AND_FILE_NAME));
 	            // Create an array to store the vector representation
 	            double[] vector = new double[word2Vec.getLayerSize()];
 	            // Split the text field into individual words
@@ -102,20 +102,20 @@ public class KeywordIndexer {
 	            //the similarity between different vector representations.
 	            for (int i = 0; i < vector.length; i++) {
 	                vector[i] /= words.length;
-	            }
+	            }*/
 
 	            
 	            
 	            if (header.equals(LuceneConstants.GROUP)) {
 					doc.add(new SortedDocValuesField (header, new BytesRef(text) ));
-					doc.add(new StoredField(header, text));
+					doc.add(new TextField(header, text, Field.Store.YES));
 				}else {
 					doc.add(new TextField(header, text, Field.Store.YES));
 				}
 	            
 	            // Create a stored field for the vector and add it to the document
-	            Field vectorField = new StoredField(header + "_vector", vector.toString());
-	            doc.add(vectorField);
+	            //Field vectorField = new StoredField(header + "_vector", vector.toString());
+	            //doc.add(vectorField);
 		    }
 		    // Add document to the index
 		    this.indexWriter.addDocument(doc);
