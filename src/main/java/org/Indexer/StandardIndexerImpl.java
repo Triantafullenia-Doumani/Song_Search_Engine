@@ -87,6 +87,7 @@ public class StandardIndexerImpl implements Indexer{
 		        // Get the text value for the header
 		        String text = record.get(header);
 		        if(header.equals("Year")) {
+		        	text = text.replace(".0", "");
 		        	System.out.println(text);
 		        }
 		        
