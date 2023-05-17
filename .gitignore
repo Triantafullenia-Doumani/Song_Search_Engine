@@ -3,3 +3,4 @@ lib/
 target/
 .classpath
 .project
+data/pretrained-model/
