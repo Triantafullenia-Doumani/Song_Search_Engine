@@ -12,8 +12,7 @@ import org.apache.lucene.util.BytesRef;
 
 public interface Searcher {
 	void printIndexer() throws IOException;
-	List<Document> search(String currentQuery, String currentField, boolean isGrouped, int currentPage)
-			throws IOException, ParseException;
+	List<Document> search(String currentQuery, String currentField, boolean isGrouped, int currentPage) throws IOException, ParseException;
 	TopGroups<BytesRef> groupingResults(Query query) throws IOException;
 	TopDocs getTopDocs();
 	TopGroups<BytesRef> getTopGroups();

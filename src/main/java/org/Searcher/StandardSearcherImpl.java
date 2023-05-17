@@ -96,7 +96,7 @@ public class StandardSearcherImpl implements Searcher{
 		        }
 		    }
 	    }
-	    //printStandardIndexer();
+	    printIndexer();
 	    // Return the list of results
 	    return results;
 	}
