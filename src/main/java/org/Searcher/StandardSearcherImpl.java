@@ -58,7 +58,8 @@ public class StandardSearcherImpl implements Searcher{
 		QueryParser queryParser = new QueryParser(currentField, new StandardAnalyzer());
 		Query query = queryParser.parse(currentQuery);
 		
-	    if (isGrouped) {
+	    
+		if (isGrouped) {
 	        topGroups = groupingResults(query);
 	        GroupDocs<BytesRef>[] groups = topGroups.groups;
 
@@ -119,16 +120,16 @@ public class StandardSearcherImpl implements Searcher{
 	@Override
 	// Print method, just for debugging to verify that Indexer has been created correctly
 	public void printIndexer() throws IOException {
-		System.out.println("Contents of the keyword index:");
-		int keywordNumDocs = standardIndexReader.numDocs();
-		for (int i = 0; i < keywordNumDocs; i++) {
+		System.out.println("Contents of the standard index:");
+		int standardNumDocs = standardIndexReader.numDocs();
+		for (int i = 0; i < standardNumDocs; i++) {
 		    Document doc = standardIndexReader.document(i);
 		    System.out.println("Document " + i + ":");
 		    List<IndexableField> fields = doc.getFields();
 		    for (IndexableField field : fields) {
-		        System.out.println("  " + field.name() + ": " + doc.get(field.name()));
+		    	System.out.println("  " + field.name() + ": " + doc.get(field.name()));
 		    }
-		}
+	    }
 	}
 	@Override
 	public TopDocs getTopDocs() {

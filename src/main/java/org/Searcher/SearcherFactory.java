@@ -3,7 +3,7 @@ package org.Searcher;
 import java.io.IOException;
 
 public class SearcherFactory {
-    public static Searcher createSearcher(String currentField, boolean semanticSearch) throws IOException {
+    public static Searcher selectSearcher(String currentField, boolean semanticSearch) throws IOException {
     	if(currentField.equals("As Keyword")) {
     		System.out.println("Searching in keyword Indexer...");
     		return new KeywordSearcherImpl();

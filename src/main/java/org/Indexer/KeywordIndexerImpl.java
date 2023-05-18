@@ -15,6 +15,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -88,7 +89,7 @@ public class KeywordIndexerImpl implements Indexer{
      
 				if (header.equals(LuceneConstants.GROUP)) {
 					doc.add(new SortedDocValuesField (header, new BytesRef(text) ));
-					doc.add(new StoredField(header, text));
+					doc.add(new StringField(header, text, Field.Store.YES));
 				}else {
 					doc.add(new TextField(header, text, Field.Store.YES));
 				}

@@ -114,9 +114,9 @@ public class KeywordSearcherImpl implements Searcher{
 	@Override
 	// Print method, just for debugging to verify that Indexer has been created correctly
 	public void printIndexer() throws IOException {
-	    System.out.println("Contents of the standard index:");
-	    int standardNumDocs = keywordIndexReader.numDocs();
-	    for (int i = 0; i < standardNumDocs; i++) {
+	    System.out.println("Contents of the keyword index:");
+	    int keywordNumDocs = keywordIndexReader.numDocs();
+	    for (int i = 0; i < keywordNumDocs; i++) {
 	        Document doc = keywordIndexReader.document(i);
 	        System.out.println("Document " + i + ":");
 	        List<IndexableField> fields = doc.getFields();

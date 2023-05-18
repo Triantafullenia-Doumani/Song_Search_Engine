@@ -30,6 +30,7 @@ import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 
 import org.Indexer.Indexer;
+import org.Indexer.KeywordIndexerImpl;
 import org.Indexer.StandardIndexerImpl;
 import org.Searcher.SearchEngine;
 import org.apache.lucene.document.Document;
@@ -49,7 +50,7 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 	private JButton prevButton;
 	private JButton nextButton;
 	private JCheckBox groupingCheckBox;
-	private JCheckBox senematicCheckBox;
+	private JCheckBox semanticCheckBox;
 	private JList<String> similarityList;
 	
 	private int currentPage = 0;
@@ -79,14 +80,14 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 		fieldComboBox = new JComboBox<>(new String[]{"As Keyword","Artist", "Title", "Album", "Date", "Lyrics", "Year"});
 		searchButton = new JButton("Search");
 		groupingCheckBox = new JCheckBox("Sort results by Year", false);
-		senematicCheckBox = new JCheckBox("Senematic Search", false);
+		semanticCheckBox = new JCheckBox("Semantic Search", false);
 		searchButton.addActionListener(this);
 		queryTextField.getDocument().addDocumentListener(this);
 		queryPanel.add(queryTextField);
 		queryPanel.add(fieldComboBox);
 		queryPanel.add(searchButton);
 		queryPanel.add(groupingCheckBox);
-		queryPanel.add(senematicCheckBox);
+		queryPanel.add(semanticCheckBox);
 		
 		// Create the results panel with the results text area and pagination controls
 		JPanel resultsPanel = new JPanel(new BorderLayout());
@@ -130,7 +131,7 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     @Override
     public void actionPerformed(ActionEvent event) {
     	boolean isGrouped;
-    	boolean senematicSearch;
+    	boolean semanticSearch;
         if (event.getActionCommand().equals("Search")) {
         	currentPage = 0;
         	String queryString = queryTextField.getText().trim();
@@ -140,14 +141,14 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
         	} else {
         		isGrouped = false;
         	}
-        	if(senematicCheckBox.isSelected()) {
-        		senematicSearch = true;
+        	if(semanticCheckBox.isSelected()) {
+        		semanticSearch = true;
         	} else {
-        		senematicSearch = false;
+        		semanticSearch = false;
         	}
             List<Document> results;
             try {
-                results = searcher.search(queryString, field,isGrouped, senematicSearch);
+                results = searcher.search(queryString, field,isGrouped, semanticSearch);
                 displayResults(results);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -199,10 +200,13 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
             String title = result.get("Title");
             String artist = result.get("Artist");
             String year = result.get("Year");
-            String resultString = title + " by " + artist + " (" + year + ")\n";
-
+            String lyrics = result.get("lyrics");
+            //String resultString = title + " by " + artist + " (" + year + ")\n";
+            String resultString = title + " by " + artist + " (" + year + ")\n\tLyrics: "+lyrics+"\n";
+            
             resultsTextArea.append(resultString);
             int startIndex = resultString.indexOf(queryString);
+            
             if(field.equals("As Keyword")) {
 	            if (startIndex != -1) {
 	                try {
@@ -270,10 +274,10 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     }
     
     public static void main(String[] args) throws IOException, CsvException {
-    	//Indexer standardIndexer = new StandardIndexerImpl();
-    	//standardIndexer.createIndexer();
-    	//Indexer keywordIndexer = new StandardIndexerImpl();
-    	//keywordIndexer.createIndexer();
+    	Indexer standardIndexer = new StandardIndexerImpl();
+    	standardIndexer.createIndexer();
+    	Indexer keywordIndexer = new KeywordIndexerImpl();
+    	keywordIndexer.createIndexer();
         SearchEngine searcher = new SearchEngine();
         new LuceneGUI( searcher);
         //searcher.close();
