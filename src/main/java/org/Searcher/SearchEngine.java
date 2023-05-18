@@ -55,7 +55,7 @@ public class SearchEngine {
 		  topGroups = searcher.getTopGroups();
 		  
 		  if(results.isEmpty()) {
-			  System.out.println("No results found");
+			  System.out.println("No results found for Query '" + currentQuery + "' in " + (currentField.equals("As Keyword") ? "any field" : "'"+currentField+"'") );
 		  }
 	      return results;
 	  }
@@ -99,7 +99,7 @@ public class SearchEngine {
 	}
 	
 	public List<String> searchHistory(String text) {
-		return history.getHistory();
+		return history.getHistory(text);
 	}
 	public void close() throws IOException {
 		searcher.close();

@@ -84,10 +84,9 @@ public class KeywordSearcherImpl implements Searcher{
 	        
 		    topDocs = keywordIndexSearcher.search(query, numOut);
 		    ScoreDoc[] hits = topDocs.scoreDocs;
-		    
 		    StoredFields storedFields = keywordIndexSearcher.storedFields();
 		    if (hits.length > 0) {
-		        for (int i = start; i < end; i++) {
+		    	for (int i = start; i < end && i < hits.length;  i++ ) {
 		            // Get the document object for the current hit
 		            Document hitDoc = storedFields.document(hits[i].doc);
 		            // Add the document object to the list of results
@@ -95,6 +94,7 @@ public class KeywordSearcherImpl implements Searcher{
 		        }
 		    }
 	    }
+	    //printIndexer();
 	    return results;
 	}
 	@Override
