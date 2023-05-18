@@ -84,7 +84,6 @@ public class KeywordSearcherImpl implements Searcher{
 	        
 		    topDocs = keywordIndexSearcher.search(query, numOut);
 		    ScoreDoc[] hits = topDocs.scoreDocs;
-		    
 		    StoredFields storedFields = keywordIndexSearcher.storedFields();
 		    if (hits.length > 0) {
 		        for (int i = start; i < end; i++) {
@@ -95,6 +94,7 @@ public class KeywordSearcherImpl implements Searcher{
 		        }
 		    }
 	    }
+	    //printIndexer();
 	    return results;
 	}
 	@Override

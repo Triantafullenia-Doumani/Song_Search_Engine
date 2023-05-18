@@ -48,14 +48,14 @@ public class SearchEngine {
 		  
 		  history.addHistory(currentQuery);
 		  
-	      searcher = SearcherFactory.createSearcher(currentField,semanticSearch);
+	      searcher = SearcherFactory.selectSearcher(currentField,semanticSearch);
 
 		  results = searcher.search(currentQuery, currentField, isGrouped, currentPage);
 		  topDocs = searcher.getTopDocs();
 		  topGroups = searcher.getTopGroups();
 		  
 		  if(results.isEmpty()) {
-			  System.out.println("No results found");
+			  System.out.println("No results found for Query '" + currentQuery + "' in " + (currentField.equals("As Keyword") ? "any field" : "'"+currentField+"'") );
 		  }
 	      return results;
 	  }

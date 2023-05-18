@@ -83,7 +83,6 @@ public class StandardSearcherImpl implements Searcher{
 	    	int numOut = LuceneConstants.PAGE_SIZE * currentPage;	
 	        int start = LuceneConstants.PAGE_SIZE * (currentPage - 1);
 	        int end = Math.min(numOut, start + LuceneConstants.PAGE_SIZE);
-	        
 	        topDocs = standardIndexSearcher.search(query, numOut);
 	        ScoreDoc[] hits = topDocs.scoreDocs;
 		    StoredFields storedFields = standardIndexSearcher.storedFields();
@@ -96,7 +95,7 @@ public class StandardSearcherImpl implements Searcher{
 		        }
 		    }
 	    }
-	    printIndexer();
+	    //printIndexer();
 	    // Return the list of results
 	    return results;
 	}
@@ -126,6 +125,7 @@ public class StandardSearcherImpl implements Searcher{
 		    System.out.println("Document " + i + ":");
 		    List<IndexableField> fields = doc.getFields();
 		    for (IndexableField field : fields) {
+		    	String value = doc.get(field.name());
 		        System.out.println("  " + field.name() + ": " + doc.get(field.name()));
 		    }
 		}

@@ -25,7 +25,6 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.ListSelectionEvent;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
@@ -34,7 +33,6 @@ import org.Indexer.Indexer;
 import org.Indexer.KeywordIndexerImpl;
 import org.Indexer.StandardIndexerImpl;
 import org.Searcher.SearchEngine;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 
@@ -56,11 +54,11 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 	private JList<String> similarityList;
 	
 	private int currentPage = 0;
-    private SearchEngine searcher;
+    private SearchEngine searchEngine;
     
     // Constructor for the GUI
-    public LuceneGUI(SearchEngine searcher) {
-        this.searcher = searcher;
+    public LuceneGUI(SearchEngine searchEngine) {
+        this.searchEngine = searchEngine;
         createGUI();
     }
 
@@ -71,18 +69,16 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 
 		// Create and set up the content pane
 		JPanel contentPane = new JPanel();
-		contentPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		contentPane.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 		contentPane.setLayout(new BorderLayout());
 		
-
-		
 		// Create the query panel with the query text field, field combo box, search button and grouping checkbox
-		JPanel queryPanel = new JPanel(new GridLayout(1, 0, 10, 0));
+		JPanel queryPanel = new JPanel(new GridLayout(1, 0, 30, 0));
 		queryTextField = new JTextField();
 		fieldComboBox = new JComboBox<>(new String[]{"As Keyword","Artist", "Title", "Album", "Date", "Lyrics", "Year"});
 		searchButton = new JButton("Search");
 		groupingCheckBox = new JCheckBox("Sort results by Year", false);
-		senematicCheckBox = new JCheckBox("Senematic Search", false);
+		senematicCheckBox = new JCheckBox("Semantic Search", false);
 		searchButton.addActionListener(this);
 		queryTextField.getDocument().addDocumentListener(this);
 		queryPanel.add(queryTextField);
@@ -150,7 +146,7 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
         	}
             List<Document> results;
             try {
-                results = searcher.search(queryString, field,isGrouped, senematicSearch);
+                results = searchEngine.search(queryString, field,isGrouped, senematicSearch);
                 displayResults(results);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -160,9 +156,9 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
             
         } else if (event.getActionCommand().equals("Next")) {
             try {
-                if (searcher.hasNextPage()) {
+                if (searchEngine.hasNextPage()) {
                 	currentPage++;
-                    List<Document> results = searcher.getNextPage();
+                    List<Document> results = searchEngine.getNextPage();
                     displayResults(results);
                 }
             } catch (IOException e) {
@@ -172,9 +168,9 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
             }
         } else if (event.getActionCommand().equals("Previous")) {
             try {
-                if (searcher.hasPreviousPage()) {
+                if (searchEngine.hasPreviousPage()) {
                 	currentPage--;
-                    List<Document> results = searcher.getPreviousPage();
+                    List<Document> results = searchEngine.getPreviousPage();
                     displayResults(results);
                 }
             } catch (IOException e) {
@@ -186,23 +182,18 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
         
     }
     private void displayResults(List<Document> results) {
-    	boolean isGrouped;
     	String queryString = queryTextField.getText().trim();
     	String field = (String) fieldComboBox.getSelectedItem();
         pageNumberLabel.setText("Page " + currentPage);
         resultsTextArea.setText("");
         Highlighter highlighter = resultsTextArea.getHighlighter();
         highlighter.removeAllHighlights();        
-        if(groupingCheckBox.isSelected()) {
-        	isGrouped = true;
-    	} else {
-    		isGrouped = false;
-    	}
         for (Document result : results) {
             String title = result.get("Title");
             String artist = result.get("Artist");
             String year = result.get("Year");
-            String resultString = title + " by " + artist + " (" + year + ")\n";
+            String lyrics = result.get("Lyrics"); 
+            String resultString = title + " by " + artist + " (" + year + ")\n\tLyrics: "+lyrics+"\n";
 
             resultsTextArea.append(resultString);
             int startIndex = resultString.indexOf(queryString);
@@ -222,15 +213,15 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
             
         }
         
-        // Enable or disable the "Previous" button based on the value of searcher.hasNextPage()
-        if (searcher.hasNextPage()) {
+        // Enable or disable the "Previous" button based on the value of searchEngine.hasNextPage()
+        if (searchEngine.hasNextPage()) {
             prevButton.setEnabled(true);
         } else {
             prevButton.setEnabled(false);
         }
         
-        // Enable or disable the "Next" button based on the value of searcher.hasNextPage()
-        if (searcher.hasNextPage()) {
+        // Enable or disable the "Next" button based on the value of searchEngine.hasNextPage()
+        if (searchEngine.hasNextPage()) {
             nextButton.setEnabled(true);
         } else {
             nextButton.setEnabled(false);
@@ -250,7 +241,7 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     }
     public void updateSuggestions() {
         String input = queryTextField.getText();
-        List<String> historyList = searcher.searchHistory(input);
+        List<String> historyList = searchEngine.searchHistory(input);
         similarityList.setListData(historyList.toArray(new String[] {}));
     }
     
@@ -273,12 +264,12 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     }
     
     public static void main(String[] args) throws IOException, CsvException {
-    	//Indexer standardIndexer = new StandardIndexerImpl();
-    	//standardIndexer.createIndexer();
-    	//Indexer keywordIndexer = new StandardIndexerImpl();
-    	//keywordIndexer.createIndexer();
-        SearchEngine searcher = new SearchEngine();
-        new LuceneGUI( searcher);
-        //searcher.close();
+    	/*Indexer standardIndexer = new StandardIndexerImpl();
+    	standardIndexer.createIndexer();
+    	Indexer keywordIndexer = new KeywordIndexerImpl();
+    	keywordIndexer.createIndexer();*/
+        SearchEngine searcheEngine = new SearchEngine();
+        new LuceneGUI(searcheEngine);
+        //searchEngine.close();
     }
 }
