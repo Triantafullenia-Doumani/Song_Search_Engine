@@ -99,7 +99,7 @@ public class SearchEngine {
 	}
 	
 	public List<String> searchHistory(String text) {
-		return history.getHistory();
+		return history.getHistory(text);
 	}
 	public void close() throws IOException {
 		searcher.close();

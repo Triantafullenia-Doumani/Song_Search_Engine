@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -33,6 +34,10 @@ import org.Indexer.Indexer;
 import org.Indexer.KeywordIndexerImpl;
 import org.Indexer.StandardIndexerImpl;
 import org.Searcher.SearchEngine;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 
@@ -50,7 +55,7 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 	private JButton prevButton;
 	private JButton nextButton;
 	private JCheckBox groupingCheckBox;
-	private JCheckBox senematicCheckBox;
+	private JCheckBox semanticCheckBox;
 	private JList<String> similarityList;
 	
 	private int currentPage = 0;
@@ -78,14 +83,14 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 		fieldComboBox = new JComboBox<>(new String[]{"As Keyword","Artist", "Title", "Album", "Date", "Lyrics", "Year"});
 		searchButton = new JButton("Search");
 		groupingCheckBox = new JCheckBox("Sort results by Year", false);
-		senematicCheckBox = new JCheckBox("Semantic Search", false);
+		semanticCheckBox = new JCheckBox("Semantic Search", false);
 		searchButton.addActionListener(this);
 		queryTextField.getDocument().addDocumentListener(this);
 		queryPanel.add(queryTextField);
 		queryPanel.add(fieldComboBox);
 		queryPanel.add(searchButton);
 		queryPanel.add(groupingCheckBox);
-		queryPanel.add(senematicCheckBox);
+		queryPanel.add(semanticCheckBox);
 		
 		// Create the results panel with the results text area and pagination controls
 		JPanel resultsPanel = new JPanel(new BorderLayout());
@@ -129,7 +134,7 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     @Override
     public void actionPerformed(ActionEvent event) {
     	boolean isGrouped;
-    	boolean senematicSearch;
+    	boolean semanticSearch;
         if (event.getActionCommand().equals("Search")) {
         	currentPage = 0;
         	String queryString = queryTextField.getText().trim();
@@ -139,14 +144,14 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
         	} else {
         		isGrouped = false;
         	}
-        	if(senematicCheckBox.isSelected()) {
-        		senematicSearch = true;
+        	if(semanticCheckBox.isSelected()) {
+        		semanticSearch = true;
         	} else {
-        		senematicSearch = false;
+        		semanticSearch = false;
         	}
             List<Document> results;
             try {
-                results = searchEngine.search(queryString, field,isGrouped, senematicSearch);
+                results = searchEngine.search(queryString, field,isGrouped, semanticSearch);
                 displayResults(results);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -182,36 +187,54 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
         
     }
     private void displayResults(List<Document> results) {
-    	String queryString = queryTextField.getText().trim();
-    	String field = (String) fieldComboBox.getSelectedItem();
-        pageNumberLabel.setText("Page " + currentPage);
-        resultsTextArea.setText("");
-        Highlighter highlighter = resultsTextArea.getHighlighter();
-        highlighter.removeAllHighlights();        
-        for (Document result : results) {
-            String title = result.get("Title");
-            String artist = result.get("Artist");
-            String year = result.get("Year");
-            String lyrics = result.get("Lyrics"); 
-            String resultString = title + " by " + artist + " (" + year + ")\n\tLyrics: "+lyrics+"\n";
 
-            resultsTextArea.append(resultString);
-            int startIndex = resultString.indexOf(queryString);
-            if(field.equals("As Keyword")) {
-	            if (startIndex != -1) {
-	                try {
-	                    highlighter.addHighlight(
-	                            resultsTextArea.getText().indexOf(resultString) + startIndex,
-	                            resultsTextArea.getText().indexOf(resultString) + startIndex + queryString.length(),
-	                            new DefaultHighlighter.DefaultHighlightPainter(Color.GREEN)
-	                    );
-	                } catch (BadLocationException e) {
-	                    e.printStackTrace();
+	    String queryString = queryTextField.getText().trim();
+
+	    Analyzer analyzer = new StandardAnalyzer();
+	    String field = (String) fieldComboBox.getSelectedItem();
+	    pageNumberLabel.setText("Page " + currentPage);
+	    resultsTextArea.setText("");
+	    Highlighter highlighter = resultsTextArea.getHighlighter();
+	    highlighter.removeAllHighlights();        
+	    for (Document result : results) {
+	        String title = result.get("Title");
+	        String artist = result.get("Artist");
+	        String year = result.get("Year");
+	        String lyrics = result.get("Lyrics"); 
+	        String resultString = title + " by " + artist + " (" + year + ")\n\tLyrics: "+lyrics+"\n";
+
+	        resultsTextArea.append(resultString);
+	        try (TokenStream queryTokenStream = analyzer.tokenStream("", new StringReader(queryString))) {
+	            CharTermAttribute termAttribute = queryTokenStream.addAttribute(CharTermAttribute.class);
+	            queryTokenStream.reset();
+
+	            while (queryTokenStream.incrementToken()) {
+	                String queryToken = termAttribute.toString();
+	                String[] resultWords = resultString.toLowerCase().split("\\s+");
+
+	                for(String word : resultWords) {
+	                    if(getEditDistance(queryToken, word) <= 2) {
+	                        int startIndex = resultString.toLowerCase().indexOf(word);
+	                        if (startIndex != -1) {
+	                            try {
+	                                highlighter.addHighlight(
+	                                    resultsTextArea.getText().indexOf(resultString) + startIndex,
+	                                    resultsTextArea.getText().indexOf(resultString) + startIndex + word.length(),
+	                                    new DefaultHighlighter.DefaultHighlightPainter(Color.GREEN)
+	                                );
+	                            } catch (BadLocationException e) {
+	                                e.printStackTrace();
+	                            }
+	                        }
+	                    }
 	                }
 	            }
-            }
-            
-        }
+
+	            queryTokenStream.end();
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
         
         // Enable or disable the "Previous" button based on the value of searchEngine.hasNextPage()
         if (searchEngine.hasNextPage()) {
@@ -227,7 +250,32 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
             nextButton.setEnabled(false);
         }
     }
-    
+    private static int getEditDistance(String word1, String word2) {
+        int len1 = word1.length();
+        int len2 = word2.length();
+        int[][] dp = new int[len1 + 1][len2 + 1];
+
+        for (int i = 0; i <= len1; i++) {
+            dp[i][0] = i;
+        }
+
+        for (int j = 0; j <= len2; j++) {
+            dp[0][j] = j;
+        }
+
+        for (int i = 1; i <= len1; i++) {
+            for (int j = 1; j <= len2; j++) {
+                if (word1.charAt(i - 1) == word2.charAt(j - 1)) {
+                    dp[i][j] = dp[i - 1][j - 1];
+                } else {
+                    dp[i][j] = Math.min(dp[i - 1][j - 1], Math.min(dp[i][j - 1], dp[i - 1][j])) + 1;
+                }
+            }
+        }
+
+        return dp[len1][len2];
+    }
+
     
     //Document Listener methods
     public void changedUpdate(DocumentEvent event) {
@@ -264,12 +312,13 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     }
     
     public static void main(String[] args) throws IOException, CsvException {
+
     	/*Indexer standardIndexer = new StandardIndexerImpl();
     	standardIndexer.createIndexer();
     	Indexer keywordIndexer = new KeywordIndexerImpl();
     	keywordIndexer.createIndexer();*/
-        SearchEngine searcheEngine = new SearchEngine();
-        new LuceneGUI(searcheEngine);
+        SearchEngine searchEngine = new SearchEngine();
+        new LuceneGUI( searchEngine);
         //searchEngine.close();
     }
 }

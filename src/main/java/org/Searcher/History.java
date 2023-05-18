@@ -6,8 +6,15 @@ import java.util.List;
 public class History {
 	List<String> history = new ArrayList<String>();
 
-	public List<String> getHistory() {
-		return history;
+	public List<String> getHistory(String text) {
+		List<String> historyList = new ArrayList<String>();
+		for(String i:history) {
+			if(i.startsWith(text)) {
+				historyList.add(i);
+				System.out.println("HISTORY: \n"+i);
+			}
+		}
+		return historyList;
 	}	
 	// Add the string query to a list for keeping history
 	public void addHistory(String text) {
