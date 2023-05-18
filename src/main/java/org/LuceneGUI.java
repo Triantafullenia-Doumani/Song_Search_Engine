@@ -201,7 +201,13 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
 	        String artist = result.get("Artist");
 	        String year = result.get("Year");
 	        String lyrics = result.get("Lyrics"); 
-	        String resultString = title + " by " + artist + " (" + year + ")\n\tLyrics: "+lyrics+"\n";
+	        String resultString;
+	        if(field.equals("Lyrics")) {
+		        resultString = title + " by " + artist + " (" + year + ")\n\tLyrics: "+lyrics+"\n";
+	        }else {
+		        resultString = title + " by " + artist + " (" + year + "\n";
+
+	        }
 
 	        resultsTextArea.append(resultString);
 	        try (TokenStream queryTokenStream = analyzer.tokenStream("", new StringReader(queryString))) {
