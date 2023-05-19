@@ -35,7 +35,6 @@ public class SearchEngine {
    *
    * @param currentQuery The query string.
    * @param currentField The field to search in.
-   * @param numResults The maximum number of results to return.
    * @return A list of documents matching the query.
    */
 	 public List<Document> search(String currentQuery, String currentField,boolean isGrouped, boolean semanticSearch) throws IOException, ParseException {
