@@ -2,7 +2,7 @@
 
 To pretrained Word2Vec model που χρησιμοποιήθηκε: https://drive.google.com/u/1/uc?id=0B7XkCwpI5KDYNlNUTTlSS21pQmM&export=download&resourcekey=0-wjGZdNAUop6WykTtMip30g
 
-Τα CSV αρχεία που χρησιμοποιήθηκαν για το dataset: 
+Τα CSV αρχεία που χρησιμοποιήθηκαν για το dataset: https://www.kaggle.com/datasets/deepshah16/song-lyrics-dataset
 
 ### 🟣 Εισαγωγή 
 
