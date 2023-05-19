@@ -199,6 +199,12 @@ Page 1
 
 ![history](data/resources/history.png)
 
+#### Σημασιολογική αναζήτηση
+  
+Αναζήτηση με βάση το νόημα της λέξης.
+
+  ![slang](data/resources/slang.png)
+  
 
 
 
