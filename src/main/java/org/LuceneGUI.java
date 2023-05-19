@@ -319,10 +319,10 @@ public class LuceneGUI implements ActionListener,DocumentListener,MouseListener 
     
     public static void main(String[] args) throws IOException, CsvException {
 
-    	/*Indexer standardIndexer = new StandardIndexerImpl();
+    	Indexer standardIndexer = new StandardIndexerImpl();
     	standardIndexer.createIndexer();
     	Indexer keywordIndexer = new KeywordIndexerImpl();
-    	keywordIndexer.createIndexer();*/
+    	keywordIndexer.createIndexer();
         SearchEngine searchEngine = new SearchEngine();
         new LuceneGUI( searchEngine);
         //searchEngine.close();
