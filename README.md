@@ -1,11 +1,12 @@
 # Song Search Engine :notes:
 
+### !! Under construction !!
+
 To pretrained Word2Vec model που χρησιμοποιήθηκε: https://drive.google.com/u/1/uc?id=0B7XkCwpI5KDYNlNUTTlSS21pQmM&export=download&resourcekey=0-wjGZdNAUop6WykTtMip30g
 
 Τα CSV αρχεία που χρησιμοποιήθηκαν για το dataset: https://www.kaggle.com/datasets/deepshah16/song-lyrics-dataset
 
-Demo: https://vimeo.com/manage/videos/828436464
-
+ 
 ### 🟣 Εισαγωγή 
 
 Η εργασία αφορά στο σχεδιασμό και υλοποίηση ενός συστήματος αναζήτησης στίχων τραγουδιών και άλλης πληροφορίας σχετικής με μουσικούς και τραγούδια. Για την υλοποίηση θα χρησιμοποιηθεί η βιβλιοθήκη [Lucene](https://lucene.apache.org/), μια βιβλιοθήκη ανοικτού κώδικα για την κατασκευή μηχανών αναζήτησης κειμένου.
